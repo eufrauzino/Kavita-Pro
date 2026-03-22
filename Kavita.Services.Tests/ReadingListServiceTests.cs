@@ -15,9 +15,11 @@ using Kavita.Models.DTOs.ReadingLists.CBL;
 using Kavita.Models.DTOs.ReadingLists.CBL.V1;
 using Kavita.Models.Entities;
 using Kavita.Models.Entities.Enums;
+using Kavita.Models.Entities.ReadingLists;
 using Kavita.Models.Entities.User;
 using Kavita.Services.Builders;
 using Kavita.Services.Reading;
+using Kavita.Services.ReadingLists;
 using Kavita.Services.Scanner;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -725,68 +727,6 @@ public class ReadingListServiceTests(ITestOutputHelper outputHelper): AbstractDb
 
     #endregion
 
-    #region FormatTitle
-
-    [Fact]
-    public void FormatTitle_ShouldFormatCorrectly()
-    {
-        // Manga Library & Archive
-        Assert.Equal("Volume 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Manga, "1")));
-        Assert.Equal("Chapter 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Manga, "1", "1")));
-        Assert.Equal("Chapter 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Manga, "1", "1", "The Title")));
-        Assert.Equal("Volume 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Manga, "1",  chapterTitleName: "The Title")));
-        Assert.Equal("The Title", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Manga, chapterTitleName: "The Title")));
-
-        // Comic Library & Archive
-        Assert.Equal("Volume 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Comic, "1")));
-        Assert.Equal("Issue #1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Comic, "1", "1")));
-        Assert.Equal("Issue #1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Comic, "1", "1", "The Title")));
-        Assert.Equal("Volume 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Comic, "1",  chapterTitleName: "The Title")));
-        Assert.Equal("The Title", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Comic, chapterTitleName: "The Title")));
-        var dto = CreateListItemDto(MangaFormat.Archive, LibraryType.Comic, chapterNumber: "The Special Title");
-        dto.IsSpecial = true;
-        Assert.Equal("The Special Title", ReadingListService.FormatTitle(dto));
-
-        // Book Library & Archive
-        Assert.Equal("Volume 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Book, "1")));
-        Assert.Equal("Book 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Book, "1", "1")));
-        Assert.Equal("Book 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Book, "1", "1", "The Title")));
-        Assert.Equal("Volume 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Book, "1",  chapterTitleName: "The Title")));
-        Assert.Equal("The Title", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Archive, LibraryType.Book, chapterTitleName: "The Title")));
-
-        // Manga Library & EPUB
-        Assert.Equal("Volume 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Epub, LibraryType.Manga, "1")));
-        Assert.Equal("Volume 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Epub, LibraryType.Manga, "1", "1")));
-        Assert.Equal("Volume 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Epub, LibraryType.Manga, "1", "1", "The Title")));
-        Assert.Equal("The Title", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Epub, LibraryType.Manga, "1",  chapterTitleName: "The Title")));
-        Assert.Equal("The Title", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Epub, LibraryType.Manga, chapterTitleName: "The Title")));
-
-        // Book Library & EPUB
-        Assert.Equal("Volume 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Epub, LibraryType.Book, "1")));
-        Assert.Equal("Volume 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Epub, LibraryType.Book, "1", "1")));
-        Assert.Equal("Volume 1", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Epub, LibraryType.Book, "1", "1", "The Title")));
-        Assert.Equal("The Title", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Epub, LibraryType.Book, "1",  chapterTitleName: "The Title")));
-        Assert.Equal("The Title", ReadingListService.FormatTitle(CreateListItemDto(MangaFormat.Epub, LibraryType.Book, chapterTitleName: "The Title")));
-
-    }
-
-    private static ReadingListItemDto CreateListItemDto(MangaFormat seriesFormat, LibraryType libraryType,
-        string volumeNumber = Parser.LooseLeafVolume,
-        string chapterNumber =Parser.DefaultChapter,
-        string chapterTitleName = "")
-    {
-        return new ReadingListItemDto()
-        {
-            SeriesFormat = seriesFormat,
-            LibraryType = libraryType,
-            VolumeNumber = volumeNumber,
-            ChapterNumber = chapterNumber,
-            ChapterTitleName = chapterTitleName
-        };
-    }
-
-    #endregion
-
     #region CreateReadingList
 
     private async Task CreateReadingList_SetupBaseData(IUnitOfWork unitOfWork, DataContext context)
@@ -988,354 +928,354 @@ public class ReadingListServiceTests(ITestOutputHelper outputHelper): AbstractDb
     }
     #endregion
 
-    #region ValidateCBL
-
-    [Fact]
-    public async Task ValidateCblFile_ShouldFail_UserHasAccessToNoSeries()
-    {
-        var (unitOfWork, context, mapper) = await CreateDatabase();
-        var (readingListService, _) = Setup(unitOfWork, context, mapper);
-        var cblReadingList = LoadCblFromPath("Fables.cbl");
-
-        // Mock up our series
-        var fablesSeries = new SeriesBuilder("Fables").Build();
-        var fables2Series = new SeriesBuilder("Fables: The Last Castle").Build();
-
-        fablesSeries.Volumes.Add(new VolumeBuilder("1")
-            .WithMinNumber(1)
-            .WithName("2002")
-            .WithChapter(new ChapterBuilder("1").Build())
-            .WithChapter(new ChapterBuilder("2").Build())
-            .WithChapter(new ChapterBuilder("3").Build())
-            .Build()
-        );
-        fables2Series.Volumes.Add(new VolumeBuilder("1")
-            .WithMinNumber(1)
-            .WithName("2003")
-            .WithChapter(new ChapterBuilder("1").Build())
-            .WithChapter(new ChapterBuilder("2").Build())
-            .WithChapter(new ChapterBuilder("3").Build())
-            .Build()
-        );
-
-        context.AppUser.Add(new AppUserBuilder("majora2007", string.Empty).Build());
-
-        context.Library.Add(new LibraryBuilder("Test LIb 2", LibraryType.Book)
-            .WithSeries(fablesSeries)
-            .WithSeries(fables2Series)
-            .Build()
-        );
-
-        await unitOfWork.CommitAsync();
-
-        var importSummary = await readingListService.ValidateCblFile(1, cblReadingList);
-
-        Assert.Equal(CblImportResult.Fail, importSummary.Success);
-        Assert.NotEmpty(importSummary.Results);
-    }
-
-    [Fact]
-    public async Task ValidateCblFile_ShouldFail_ServerHasNoSeries()
-    {
-        var (unitOfWork, context, mapper) = await CreateDatabase();
-        var (readingListService, _) = Setup(unitOfWork, context, mapper);
-        var cblReadingList = LoadCblFromPath("Fables.cbl");
-
-        // Mock up our series
-        var fablesSeries = new SeriesBuilder("Fablesa").Build();
-        var fables2Series = new SeriesBuilder("Fablesa: The Last Castle").Build();
-
-        fablesSeries.Volumes.Add(new VolumeBuilder("2002")
-            .WithMinNumber(1)
-            .WithChapter(new ChapterBuilder("1").Build())
-            .WithChapter(new ChapterBuilder("2").Build())
-            .WithChapter(new ChapterBuilder("3").Build())
-            .Build());
-        fables2Series.Volumes.Add(new VolumeBuilder("2003")
-            .WithMinNumber(1)
-            .WithChapter(new ChapterBuilder("1").Build())
-            .WithChapter(new ChapterBuilder("2").Build())
-            .WithChapter(new ChapterBuilder("3").Build())
-            .Build());
-
-        context.AppUser.Add(new AppUser()
-        {
-            UserName = "majora2007",
-            ReadingLists = new List<ReadingList>(),
-            Libraries = new List<Library>(),
-        });
-
-        context.Library.Add(new LibraryBuilder("Test LIb 2", LibraryType.Book)
-            .WithSeries(fablesSeries)
-            .WithSeries(fables2Series)
-            .Build());
-
-        await unitOfWork.CommitAsync();
-
-        var importSummary = await readingListService.ValidateCblFile(1, cblReadingList);
-
-        Assert.Equal(CblImportResult.Fail, importSummary.Success);
-        Assert.NotEmpty(importSummary.Results);
-    }
-
-    #endregion
-
-    #region CreateReadingListFromCBL
-
-    private static CblReadingList LoadCblFromPath(string path)
-    {
-        var testDirectory = Path.Join(Directory.GetCurrentDirectory(), "../../../Test Data/ReadingListService/");
-
-        var reader = new System.Xml.Serialization.XmlSerializer(typeof(CblReadingList));
-        using var file = new StreamReader(Path.Join(testDirectory, path));
-        var cblReadingList = (CblReadingList) reader.Deserialize(file);
-        file.Close();
-        return cblReadingList;
-    }
-
-    [Fact]
-    public async Task CreateReadingListFromCBL_ShouldCreateList()
-    {
-        var (unitOfWork, context, mapper) = await CreateDatabase();
-        var (readingListService, _) = Setup(unitOfWork, context, mapper);
-        var cblReadingList = LoadCblFromPath("Fables.cbl");
-
-        // Mock up our series
-        var fablesSeries = new SeriesBuilder("Fables")
-            .WithVolume(new VolumeBuilder("2002")
-                .WithMinNumber(1)
-                .WithChapter(new ChapterBuilder("1").Build())
-                .WithChapter(new ChapterBuilder("2").Build())
-                .WithChapter(new ChapterBuilder("3").Build())
-                .Build())
-            .Build();
-
-        var fables2Series = new SeriesBuilder("Fables: The Last Castle")
-            .WithVolume(new VolumeBuilder("2003")
-                .WithMinNumber(1)
-                .WithChapter(new ChapterBuilder("1").Build())
-                .WithChapter(new ChapterBuilder("2").Build())
-                .WithChapter(new ChapterBuilder("3").Build())
-                .Build())
-            .Build();
-
-        context.AppUser.Add(new AppUser()
-        {
-            UserName = "majora2007",
-            ReadingLists = new List<ReadingList>(),
-            Libraries = new List<Library>()
-            {
-                new LibraryBuilder("Test LIb 2", LibraryType.Book)
-                    .WithSeries(fablesSeries)
-                    .WithSeries(fables2Series)
-                    .Build()
-            },
-        });
-        await unitOfWork.CommitAsync();
-
-        var importSummary = await readingListService.CreateReadingListFromCbl(1, cblReadingList);
-
-        Assert.Equal(CblImportResult.Partial, importSummary.Success);
-        Assert.NotEmpty(importSummary.Results);
-
-        var createdList = await unitOfWork.ReadingListRepository.GetReadingListByIdAsync(1);
-
-        Assert.NotNull(createdList);
-        Assert.Equal("Fables", createdList.Title);
-
-        Assert.Equal(4, createdList.Items.Count);
-        Assert.Equal(1, createdList.Items.First(item => item.Order == 0).ChapterId);
-        Assert.Equal(2, createdList.Items.First(item => item.Order == 1).ChapterId);
-        Assert.Equal(3, createdList.Items.First(item => item.Order == 2).ChapterId);
-        Assert.Equal(4, createdList.Items.First(item => item.Order == 3).ChapterId);
-    }
-
-    [Fact]
-    public async Task CreateReadingListFromCBL_ShouldCreateList_ButOnlyIncludeSeriesThatUserHasAccessTo()
-    {
-        var (unitOfWork, context, mapper) = await CreateDatabase();
-        var (readingListService, _) = Setup(unitOfWork, context, mapper);
-        var cblReadingList = LoadCblFromPath("Fables.cbl");
-
-        // Mock up our series
-        var fablesSeries = new SeriesBuilder("Fables").Build();
-        var fables2Series = new SeriesBuilder("Fables: The Last Castle").Build();
-
-        fablesSeries.Volumes.Add(new VolumeBuilder("2002")
-            .WithMinNumber(1)
-            .WithChapter(new ChapterBuilder("1").Build())
-            .WithChapter(new ChapterBuilder("2").Build())
-            .WithChapter(new ChapterBuilder("3").Build())
-            .Build());
-        fables2Series.Volumes.Add(new VolumeBuilder("2003")
-            .WithMinNumber(1)
-            .WithChapter(new ChapterBuilder("1").Build())
-            .WithChapter(new ChapterBuilder("2").Build())
-            .WithChapter(new ChapterBuilder("3").Build())
-            .Build());
-
-        context.AppUser.Add(new AppUser()
-        {
-            UserName = "majora2007",
-            ReadingLists = new List<ReadingList>(),
-            Libraries = new List<Library>()
-            {
-                new LibraryBuilder("Test LIb 2", LibraryType.Book)
-                    .WithSeries(fablesSeries)
-                    .Build()
-            },
-        });
-
-        context.Library.Add(new LibraryBuilder("Test LIb 2", LibraryType.Book)
-            .WithSeries(fables2Series)
-            .Build());
-
-        await unitOfWork.CommitAsync();
-
-        var importSummary = await readingListService.CreateReadingListFromCbl(1, cblReadingList);
-
-        Assert.Equal(CblImportResult.Partial, importSummary.Success);
-        Assert.NotEmpty(importSummary.Results);
-
-        var createdList = await unitOfWork.ReadingListRepository.GetReadingListByIdAsync(1);
-
-        Assert.NotNull(createdList);
-        Assert.Equal("Fables", createdList.Title);
-
-        Assert.Equal(3, createdList.Items.Count);
-        Assert.Equal(1, createdList.Items.First(item => item.Order == 0).ChapterId);
-        Assert.Equal(2, createdList.Items.First(item => item.Order == 1).ChapterId);
-        Assert.Equal(3, createdList.Items.First(item => item.Order == 2).ChapterId);
-        Assert.NotNull(importSummary.Results.SingleOrDefault(r => r.Series == "Fables: The Last Castle"
-                                                                  && r.Reason == CblImportReason.SeriesMissing));
-    }
-
-    [Fact]
-    public async Task CreateReadingListFromCBL_ShouldUpdateAnExistingList()
-    {
-        var (unitOfWork, context, mapper) = await CreateDatabase();
-        var (readingListService, _) = Setup(unitOfWork, context, mapper);
-        var cblReadingList = LoadCblFromPath("Fables.cbl");
-
-        // Mock up our series
-        var fablesSeries = new SeriesBuilder("Fables").Build();
-        var fables2Series = new SeriesBuilder("Fables: The Last Castle").Build();
-
-        fablesSeries.Volumes.Add(new VolumeBuilder("2002")
-            .WithMinNumber(1)
-            .WithChapter(new ChapterBuilder("1").Build())
-            .WithChapter(new ChapterBuilder("2").Build())
-            .WithChapter(new ChapterBuilder("3").Build())
-            .Build());
-        fables2Series.Volumes.Add(new VolumeBuilder("2003")
-            .WithMinNumber(1)
-            .WithChapter(new ChapterBuilder("1").Build())
-            .WithChapter(new ChapterBuilder("2").Build())
-            .WithChapter(new ChapterBuilder("3").Build())
-            .Build());
-
-        context.AppUser.Add(new AppUser()
-        {
-            UserName = "majora2007",
-            ReadingLists = new List<ReadingList>(),
-            Libraries = new List<Library>()
-            {
-                new LibraryBuilder("Test LIb 2", LibraryType.Book)
-                    .WithSeries(fablesSeries)
-                    .WithSeries(fables2Series)
-                    .Build()
-            },
-        });
-
-        await unitOfWork.CommitAsync();
-
-        // Create a reading list named Fables and add 2 chapters to it
-        var user = await unitOfWork.UserRepository.GetUserByIdAsync(1, AppUserIncludes.ReadingLists);
-        Assert.NotNull(user);
-        var readingList = await readingListService.CreateReadingListForUser(user, "Fables");
-        Assert.True(await readingListService.AddChaptersToReadingList(1, new List<int>() {1, 3}, readingList));
-        Assert.Equal(2, readingList.Items.Count);
-
-        // Attempt to import a Cbl with same reading list name
-        var importSummary = await readingListService.CreateReadingListFromCbl(1, cblReadingList);
-
-        Assert.Equal(CblImportResult.Partial, importSummary.Success);
-        Assert.NotEmpty(importSummary.Results);
-
-        var createdList = await unitOfWork.ReadingListRepository.GetReadingListByIdAsync(1);
-
-        Assert.NotNull(createdList);
-        Assert.Equal("Fables", createdList.Title);
-
-        Assert.Equal(4, createdList.Items.Count);
-        Assert.Equal(4, importSummary.SuccessfulInserts.Count);
-
-        Assert.Equal(1, createdList.Items.First(item => item.Order == 0).ChapterId);
-        Assert.Equal(3, createdList.Items.First(item => item.Order == 1).ChapterId); // we inserted 3 first
-        Assert.Equal(2, createdList.Items.First(item => item.Order == 2).ChapterId);
-        Assert.Equal(4, createdList.Items.First(item => item.Order == 3).ChapterId);
-    }
-
-    /// <summary>
-    /// This test is about ensuring Annuals that are a separate series can be linked up properly (ComicVine)
-    /// </summary>
-    //[Fact]
-    public async Task CreateReadingListFromCBL_ShouldCreateList_WithAnnuals()
-    {
-        // TODO: Implement this correctly
-        var (unitOfWork, context, mapper) = await CreateDatabase();
-        var (readingListService, _) = Setup(unitOfWork, context, mapper);
-        var cblReadingList = LoadCblFromPath("Annual.cbl");
-
-        // Mock up our series
-        var fablesSeries = new SeriesBuilder("Fables")
-            .WithVolume(new VolumeBuilder("2002")
-                .WithMinNumber(1)
-                .WithChapter(new ChapterBuilder("1").Build())
-                .WithChapter(new ChapterBuilder("2").Build())
-                .WithChapter(new ChapterBuilder("3").Build())
-                .Build())
-            .Build();
-
-        var fables2Series = new SeriesBuilder("Fables Annual")
-            .WithVolume(new VolumeBuilder("2003")
-                .WithMinNumber(1)
-                .WithChapter(new ChapterBuilder("1").Build())
-                .Build())
-            .Build();
-
-        context.AppUser.Add(new AppUser()
-        {
-            UserName = "majora2007",
-            ReadingLists = new List<ReadingList>(),
-            Libraries = new List<Library>()
-            {
-                new LibraryBuilder("Test LIb 2", LibraryType.Book)
-                    .WithSeries(fablesSeries)
-                    .WithSeries(fables2Series)
-                    .Build()
-            },
-        });
-        await unitOfWork.CommitAsync();
-
-        var importSummary = await readingListService.CreateReadingListFromCbl(1, cblReadingList);
-
-        Assert.Equal(CblImportResult.Success, importSummary.Success);
-        Assert.NotEmpty(importSummary.Results);
-
-        var createdList = await unitOfWork.ReadingListRepository.GetReadingListByIdAsync(1);
-
-        Assert.NotNull(createdList);
-        Assert.Equal("Annual", createdList.Title);
-
-        Assert.Equal(4, createdList.Items.Count);
-        Assert.Equal(1, createdList.Items.First(item => item.Order == 0).ChapterId);
-        Assert.Equal(2, createdList.Items.First(item => item.Order == 1).ChapterId);
-        Assert.Equal(4, createdList.Items.First(item => item.Order == 2).ChapterId);
-        Assert.Equal(3, createdList.Items.First(item => item.Order == 3).ChapterId);
-    }
-
-    #endregion
+    // #region ValidateCBL
+    //
+    // [Fact]
+    // public async Task ValidateCblFile_ShouldFail_UserHasAccessToNoSeries()
+    // {
+    //     var (unitOfWork, context, mapper) = await CreateDatabase();
+    //     var (readingListService, _) = Setup(unitOfWork, context, mapper);
+    //     var cblReadingList = LoadCblFromPath("Fables.cbl");
+    //
+    //     // Mock up our series
+    //     var fablesSeries = new SeriesBuilder("Fables").Build();
+    //     var fables2Series = new SeriesBuilder("Fables: The Last Castle").Build();
+    //
+    //     fablesSeries.Volumes.Add(new VolumeBuilder("1")
+    //         .WithMinNumber(1)
+    //         .WithName("2002")
+    //         .WithChapter(new ChapterBuilder("1").Build())
+    //         .WithChapter(new ChapterBuilder("2").Build())
+    //         .WithChapter(new ChapterBuilder("3").Build())
+    //         .Build()
+    //     );
+    //     fables2Series.Volumes.Add(new VolumeBuilder("1")
+    //         .WithMinNumber(1)
+    //         .WithName("2003")
+    //         .WithChapter(new ChapterBuilder("1").Build())
+    //         .WithChapter(new ChapterBuilder("2").Build())
+    //         .WithChapter(new ChapterBuilder("3").Build())
+    //         .Build()
+    //     );
+    //
+    //     context.AppUser.Add(new AppUserBuilder("majora2007", string.Empty).Build());
+    //
+    //     context.Library.Add(new LibraryBuilder("Test LIb 2", LibraryType.Book)
+    //         .WithSeries(fablesSeries)
+    //         .WithSeries(fables2Series)
+    //         .Build()
+    //     );
+    //
+    //     await unitOfWork.CommitAsync();
+    //
+    //     var importSummary = await readingListService.ValidateCblFile(1, cblReadingList);
+    //
+    //     Assert.Equal(CblImportResult.Fail, importSummary.Success);
+    //     Assert.NotEmpty(importSummary.Results);
+    // }
+    //
+    // [Fact]
+    // public async Task ValidateCblFile_ShouldFail_ServerHasNoSeries()
+    // {
+    //     var (unitOfWork, context, mapper) = await CreateDatabase();
+    //     var (readingListService, _) = Setup(unitOfWork, context, mapper);
+    //     var cblReadingList = LoadCblFromPath("Fables.cbl");
+    //
+    //     // Mock up our series
+    //     var fablesSeries = new SeriesBuilder("Fablesa").Build();
+    //     var fables2Series = new SeriesBuilder("Fablesa: The Last Castle").Build();
+    //
+    //     fablesSeries.Volumes.Add(new VolumeBuilder("2002")
+    //         .WithMinNumber(1)
+    //         .WithChapter(new ChapterBuilder("1").Build())
+    //         .WithChapter(new ChapterBuilder("2").Build())
+    //         .WithChapter(new ChapterBuilder("3").Build())
+    //         .Build());
+    //     fables2Series.Volumes.Add(new VolumeBuilder("2003")
+    //         .WithMinNumber(1)
+    //         .WithChapter(new ChapterBuilder("1").Build())
+    //         .WithChapter(new ChapterBuilder("2").Build())
+    //         .WithChapter(new ChapterBuilder("3").Build())
+    //         .Build());
+    //
+    //     context.AppUser.Add(new AppUser()
+    //     {
+    //         UserName = "majora2007",
+    //         ReadingLists = new List<ReadingList>(),
+    //         Libraries = new List<Library>(),
+    //     });
+    //
+    //     context.Library.Add(new LibraryBuilder("Test LIb 2", LibraryType.Book)
+    //         .WithSeries(fablesSeries)
+    //         .WithSeries(fables2Series)
+    //         .Build());
+    //
+    //     await unitOfWork.CommitAsync();
+    //
+    //     var importSummary = await readingListService.ValidateCblFile(1, cblReadingList);
+    //
+    //     Assert.Equal(CblImportResult.Fail, importSummary.Success);
+    //     Assert.NotEmpty(importSummary.Results);
+    // }
+    //
+    // #endregion
+    //
+    // #region CreateReadingListFromCBL
+    //
+    // private static CblReadingList LoadCblFromPath(string path)
+    // {
+    //     var testDirectory = Path.Join(Directory.GetCurrentDirectory(), "../../../Test Data/ReadingListService/");
+    //
+    //     var reader = new System.Xml.Serialization.XmlSerializer(typeof(CblReadingList));
+    //     using var file = new StreamReader(Path.Join(testDirectory, path));
+    //     var cblReadingList = (CblReadingList) reader.Deserialize(file);
+    //     file.Close();
+    //     return cblReadingList;
+    // }
+    //
+    // [Fact]
+    // public async Task CreateReadingListFromCBL_ShouldCreateList()
+    // {
+    //     var (unitOfWork, context, mapper) = await CreateDatabase();
+    //     var (readingListService, _) = Setup(unitOfWork, context, mapper);
+    //     var cblReadingList = LoadCblFromPath("Fables.cbl");
+    //
+    //     // Mock up our series
+    //     var fablesSeries = new SeriesBuilder("Fables")
+    //         .WithVolume(new VolumeBuilder("2002")
+    //             .WithMinNumber(1)
+    //             .WithChapter(new ChapterBuilder("1").Build())
+    //             .WithChapter(new ChapterBuilder("2").Build())
+    //             .WithChapter(new ChapterBuilder("3").Build())
+    //             .Build())
+    //         .Build();
+    //
+    //     var fables2Series = new SeriesBuilder("Fables: The Last Castle")
+    //         .WithVolume(new VolumeBuilder("2003")
+    //             .WithMinNumber(1)
+    //             .WithChapter(new ChapterBuilder("1").Build())
+    //             .WithChapter(new ChapterBuilder("2").Build())
+    //             .WithChapter(new ChapterBuilder("3").Build())
+    //             .Build())
+    //         .Build();
+    //
+    //     context.AppUser.Add(new AppUser()
+    //     {
+    //         UserName = "majora2007",
+    //         ReadingLists = new List<ReadingList>(),
+    //         Libraries = new List<Library>()
+    //         {
+    //             new LibraryBuilder("Test LIb 2", LibraryType.Book)
+    //                 .WithSeries(fablesSeries)
+    //                 .WithSeries(fables2Series)
+    //                 .Build()
+    //         },
+    //     });
+    //     await unitOfWork.CommitAsync();
+    //
+    //     var importSummary = await readingListService.CreateReadingListFromCbl(1, cblReadingList);
+    //
+    //     Assert.Equal(CblImportResult.Partial, importSummary.Success);
+    //     Assert.NotEmpty(importSummary.Results);
+    //
+    //     var createdList = await unitOfWork.ReadingListRepository.GetReadingListByIdAsync(1);
+    //
+    //     Assert.NotNull(createdList);
+    //     Assert.Equal("Fables", createdList.Title);
+    //
+    //     Assert.Equal(4, createdList.Items.Count);
+    //     Assert.Equal(1, createdList.Items.First(item => item.Order == 0).ChapterId);
+    //     Assert.Equal(2, createdList.Items.First(item => item.Order == 1).ChapterId);
+    //     Assert.Equal(3, createdList.Items.First(item => item.Order == 2).ChapterId);
+    //     Assert.Equal(4, createdList.Items.First(item => item.Order == 3).ChapterId);
+    // }
+    //
+    // [Fact]
+    // public async Task CreateReadingListFromCBL_ShouldCreateList_ButOnlyIncludeSeriesThatUserHasAccessTo()
+    // {
+    //     var (unitOfWork, context, mapper) = await CreateDatabase();
+    //     var (readingListService, _) = Setup(unitOfWork, context, mapper);
+    //     var cblReadingList = LoadCblFromPath("Fables.cbl");
+    //
+    //     // Mock up our series
+    //     var fablesSeries = new SeriesBuilder("Fables").Build();
+    //     var fables2Series = new SeriesBuilder("Fables: The Last Castle").Build();
+    //
+    //     fablesSeries.Volumes.Add(new VolumeBuilder("2002")
+    //         .WithMinNumber(1)
+    //         .WithChapter(new ChapterBuilder("1").Build())
+    //         .WithChapter(new ChapterBuilder("2").Build())
+    //         .WithChapter(new ChapterBuilder("3").Build())
+    //         .Build());
+    //     fables2Series.Volumes.Add(new VolumeBuilder("2003")
+    //         .WithMinNumber(1)
+    //         .WithChapter(new ChapterBuilder("1").Build())
+    //         .WithChapter(new ChapterBuilder("2").Build())
+    //         .WithChapter(new ChapterBuilder("3").Build())
+    //         .Build());
+    //
+    //     context.AppUser.Add(new AppUser()
+    //     {
+    //         UserName = "majora2007",
+    //         ReadingLists = new List<ReadingList>(),
+    //         Libraries = new List<Library>()
+    //         {
+    //             new LibraryBuilder("Test LIb 2", LibraryType.Book)
+    //                 .WithSeries(fablesSeries)
+    //                 .Build()
+    //         },
+    //     });
+    //
+    //     context.Library.Add(new LibraryBuilder("Test LIb 2", LibraryType.Book)
+    //         .WithSeries(fables2Series)
+    //         .Build());
+    //
+    //     await unitOfWork.CommitAsync();
+    //
+    //     var importSummary = await readingListService.CreateReadingListFromCbl(1, cblReadingList);
+    //
+    //     Assert.Equal(CblImportResult.Partial, importSummary.Success);
+    //     Assert.NotEmpty(importSummary.Results);
+    //
+    //     var createdList = await unitOfWork.ReadingListRepository.GetReadingListByIdAsync(1);
+    //
+    //     Assert.NotNull(createdList);
+    //     Assert.Equal("Fables", createdList.Title);
+    //
+    //     Assert.Equal(3, createdList.Items.Count);
+    //     Assert.Equal(1, createdList.Items.First(item => item.Order == 0).ChapterId);
+    //     Assert.Equal(2, createdList.Items.First(item => item.Order == 1).ChapterId);
+    //     Assert.Equal(3, createdList.Items.First(item => item.Order == 2).ChapterId);
+    //     Assert.NotNull(importSummary.Results.SingleOrDefault(r => r.Series == "Fables: The Last Castle"
+    //                                                               && r.Reason == CblImportReason.SeriesMissing));
+    // }
+    //
+    // [Fact]
+    // public async Task CreateReadingListFromCBL_ShouldUpdateAnExistingList()
+    // {
+    //     var (unitOfWork, context, mapper) = await CreateDatabase();
+    //     var (readingListService, _) = Setup(unitOfWork, context, mapper);
+    //     var cblReadingList = LoadCblFromPath("Fables.cbl");
+    //
+    //     // Mock up our series
+    //     var fablesSeries = new SeriesBuilder("Fables").Build();
+    //     var fables2Series = new SeriesBuilder("Fables: The Last Castle").Build();
+    //
+    //     fablesSeries.Volumes.Add(new VolumeBuilder("2002")
+    //         .WithMinNumber(1)
+    //         .WithChapter(new ChapterBuilder("1").Build())
+    //         .WithChapter(new ChapterBuilder("2").Build())
+    //         .WithChapter(new ChapterBuilder("3").Build())
+    //         .Build());
+    //     fables2Series.Volumes.Add(new VolumeBuilder("2003")
+    //         .WithMinNumber(1)
+    //         .WithChapter(new ChapterBuilder("1").Build())
+    //         .WithChapter(new ChapterBuilder("2").Build())
+    //         .WithChapter(new ChapterBuilder("3").Build())
+    //         .Build());
+    //
+    //     context.AppUser.Add(new AppUser()
+    //     {
+    //         UserName = "majora2007",
+    //         ReadingLists = new List<ReadingList>(),
+    //         Libraries = new List<Library>()
+    //         {
+    //             new LibraryBuilder("Test LIb 2", LibraryType.Book)
+    //                 .WithSeries(fablesSeries)
+    //                 .WithSeries(fables2Series)
+    //                 .Build()
+    //         },
+    //     });
+    //
+    //     await unitOfWork.CommitAsync();
+    //
+    //     // Create a reading list named Fables and add 2 chapters to it
+    //     var user = await unitOfWork.UserRepository.GetUserByIdAsync(1, AppUserIncludes.ReadingLists);
+    //     Assert.NotNull(user);
+    //     var readingList = await readingListService.CreateReadingListForUser(user, "Fables");
+    //     Assert.True(await readingListService.AddChaptersToReadingList(1, new List<int>() {1, 3}, readingList));
+    //     Assert.Equal(2, readingList.Items.Count);
+    //
+    //     // Attempt to import a Cbl with same reading list name
+    //     var importSummary = await readingListService.CreateReadingListFromCbl(1, cblReadingList);
+    //
+    //     Assert.Equal(CblImportResult.Partial, importSummary.Success);
+    //     Assert.NotEmpty(importSummary.Results);
+    //
+    //     var createdList = await unitOfWork.ReadingListRepository.GetReadingListByIdAsync(1);
+    //
+    //     Assert.NotNull(createdList);
+    //     Assert.Equal("Fables", createdList.Title);
+    //
+    //     Assert.Equal(4, createdList.Items.Count);
+    //     Assert.Equal(4, importSummary.SuccessfulInserts.Count);
+    //
+    //     Assert.Equal(1, createdList.Items.First(item => item.Order == 0).ChapterId);
+    //     Assert.Equal(3, createdList.Items.First(item => item.Order == 1).ChapterId); // we inserted 3 first
+    //     Assert.Equal(2, createdList.Items.First(item => item.Order == 2).ChapterId);
+    //     Assert.Equal(4, createdList.Items.First(item => item.Order == 3).ChapterId);
+    // }
+    //
+    // /// <summary>
+    // /// This test is about ensuring Annuals that are a separate series can be linked up properly (ComicVine)
+    // /// </summary>
+    // //[Fact]
+    // public async Task CreateReadingListFromCBL_ShouldCreateList_WithAnnuals()
+    // {
+    //     // TODO: Implement this correctly
+    //     var (unitOfWork, context, mapper) = await CreateDatabase();
+    //     var (readingListService, _) = Setup(unitOfWork, context, mapper);
+    //     var cblReadingList = LoadCblFromPath("Annual.cbl");
+    //
+    //     // Mock up our series
+    //     var fablesSeries = new SeriesBuilder("Fables")
+    //         .WithVolume(new VolumeBuilder("2002")
+    //             .WithMinNumber(1)
+    //             .WithChapter(new ChapterBuilder("1").Build())
+    //             .WithChapter(new ChapterBuilder("2").Build())
+    //             .WithChapter(new ChapterBuilder("3").Build())
+    //             .Build())
+    //         .Build();
+    //
+    //     var fables2Series = new SeriesBuilder("Fables Annual")
+    //         .WithVolume(new VolumeBuilder("2003")
+    //             .WithMinNumber(1)
+    //             .WithChapter(new ChapterBuilder("1").Build())
+    //             .Build())
+    //         .Build();
+    //
+    //     context.AppUser.Add(new AppUser()
+    //     {
+    //         UserName = "majora2007",
+    //         ReadingLists = new List<ReadingList>(),
+    //         Libraries = new List<Library>()
+    //         {
+    //             new LibraryBuilder("Test LIb 2", LibraryType.Book)
+    //                 .WithSeries(fablesSeries)
+    //                 .WithSeries(fables2Series)
+    //                 .Build()
+    //         },
+    //     });
+    //     await unitOfWork.CommitAsync();
+    //
+    //     var importSummary = await readingListService.CreateReadingListFromCbl(1, cblReadingList);
+    //
+    //     Assert.Equal(CblImportResult.Success, importSummary.Success);
+    //     Assert.NotEmpty(importSummary.Results);
+    //
+    //     var createdList = await unitOfWork.ReadingListRepository.GetReadingListByIdAsync(1);
+    //
+    //     Assert.NotNull(createdList);
+    //     Assert.Equal("Annual", createdList.Title);
+    //
+    //     Assert.Equal(4, createdList.Items.Count);
+    //     Assert.Equal(1, createdList.Items.First(item => item.Order == 0).ChapterId);
+    //     Assert.Equal(2, createdList.Items.First(item => item.Order == 1).ChapterId);
+    //     Assert.Equal(4, createdList.Items.First(item => item.Order == 2).ChapterId);
+    //     Assert.Equal(3, createdList.Items.First(item => item.Order == 3).ChapterId);
+    // }
+    //
+    // #endregion
 
     #region CreateReadingListsFromSeries
 

@@ -20,6 +20,7 @@ using Kavita.Models.DTOs.Person;
 using Kavita.Models.DTOs.Progress;
 using Kavita.Models.DTOs.Reader;
 using Kavita.Models.DTOs.ReadingLists;
+using Kavita.Models.DTOs.ReadingLists.CBL.RemapRules;
 using Kavita.Models.DTOs.Recommendation;
 using Kavita.Models.DTOs.Scrobbling;
 using Kavita.Models.DTOs.Search;
@@ -34,6 +35,7 @@ using Kavita.Models.Entities.Metadata;
 using Kavita.Models.Entities.MetadataMatching;
 using Kavita.Models.Entities.Person;
 using Kavita.Models.Entities.Progress;
+using Kavita.Models.Entities.ReadingLists;
 using Kavita.Models.Entities.Scrobble;
 using Kavita.Models.Entities.User;
 
@@ -223,7 +225,13 @@ public class AutoMapperProfiles : Profile
             .ForMember(dest => dest.SeriesId,
                 opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.LibraryName,
-                opt => opt.MapFrom(src => src.Library.Name));
+                opt => opt.MapFrom(src => src.Library.Name))
+            .ForMember(dest => dest.ReleaseYear,
+                opt => opt.MapFrom(src => src.Metadata.ReleaseYear))
+            .ForMember(dest => dest.VolumeCount,
+                opt => opt.MapFrom(src => src.Volumes.Count))
+            .ForMember(dest => dest.ChapterCount,
+                opt => opt.MapFrom(src => src.Volumes.SelectMany(v => v.Chapters).Count()));
 
         CreateMap<Library, LiteLibraryDto>();
         CreateMap<Library, LibraryDto>()
@@ -331,6 +339,18 @@ public class AutoMapperProfiles : Profile
         CreateMap<ClientDevice, ClientDeviceDto>()
             .ForMember(dest => dest.OwnerUserId, opt => opt.MapFrom(src => src.AppUserId))
             .ForMember(dest => dest.OwnerUsername, opt => opt.MapFrom(src => src.AppUser.UserName));
+
+        CreateMap<ReadingListRemapRule, RemapRuleDto>()
+            .ForMember(dest => dest.CreatedByUserName,
+                opt => opt.MapFrom(src => src.AppUser != null ? src.AppUser.UserName : string.Empty))
+            .ForMember(dest => dest.ChapterRange,
+                opt => opt.MapFrom(src => src.Chapter != null ? src.Chapter.Range : string.Empty))
+            .ForMember(dest => dest.ChapterTitleName,
+                opt => opt.MapFrom(src => src.Chapter != null ? src.Chapter.TitleName : string.Empty))
+            .ForMember(dest => dest.ChapterIsSpecial,
+                opt => opt.MapFrom(src => src.Chapter != null && src.Chapter.IsSpecial))
+            .ForMember(dest => dest.LibraryType,
+                opt => opt.MapFrom(src => src.Series.Library != null ? src.Series.Library.Type : LibraryType.Comic));
 
         CreateMap<AppUserRating, UserReviewExtendedDto>()
             .ForMember(dest => dest.Body,

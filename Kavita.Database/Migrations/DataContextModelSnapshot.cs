@@ -1641,7 +1641,7 @@ namespace Kavita.Database.Migrations
                     b.ToTable("AppUserReadingSessionActivityData");
                 });
 
-            modelBuilder.Entity("Kavita.Models.Entities.ReadingList", b =>
+            modelBuilder.Entity("Kavita.Models.Entities.ReadingLists.ReadingList", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1665,6 +1665,9 @@ namespace Kavita.Database.Migrations
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DownloadUrl")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("EndingMonth")
                         .HasColumnType("INTEGER");
 
@@ -1677,6 +1680,12 @@ namespace Kavita.Database.Migrations
                     b.Property<DateTime>("LastModifiedUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("LastSyncCheckUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastSyncedUtc")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("NormalizedTitle")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -1687,7 +1696,18 @@ namespace Kavita.Database.Migrations
                     b.Property<bool>("Promoted")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("Provider")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
+
                     b.Property<string>("SecondaryColor")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ShaHash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourcePath")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("StartingMonth")
@@ -1710,7 +1730,7 @@ namespace Kavita.Database.Migrations
                     b.ToTable("ReadingList");
                 });
 
-            modelBuilder.Entity("Kavita.Models.Entities.ReadingListItem", b =>
+            modelBuilder.Entity("Kavita.Models.Entities.ReadingLists.ReadingListItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1742,6 +1762,64 @@ namespace Kavita.Database.Migrations
                     b.HasIndex("VolumeId");
 
                     b.ToTable("ReadingListItem");
+                });
+
+            modelBuilder.Entity("Kavita.Models.Entities.ReadingLists.ReadingListRemapRule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AppUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CblNumber")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CblSeriesName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CblVolume")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ChapterId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsGlobal")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("NormalizedCblSeriesName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SeriesId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SeriesNameAtMapping")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("VolumeId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId");
+
+                    b.HasIndex("ChapterId");
+
+                    b.HasIndex("SeriesId");
+
+                    b.HasIndex("VolumeId");
+
+                    b.HasIndex("NormalizedCblSeriesName", "IsGlobal", "AppUserId")
+                        .HasDatabaseName("IX_ReadingListRemapRule_NormalizedCblSeriesName_IsGlobal_AppUserId");
+
+                    b.ToTable("ReadingListRemapRule");
                 });
 
             modelBuilder.Entity("Kavita.Models.Entities.Scrobble.ScrobbleError", b =>
@@ -3900,7 +3978,7 @@ namespace Kavita.Database.Migrations
                     b.Navigation("Volume");
                 });
 
-            modelBuilder.Entity("Kavita.Models.Entities.ReadingList", b =>
+            modelBuilder.Entity("Kavita.Models.Entities.ReadingLists.ReadingList", b =>
                 {
                     b.HasOne("Kavita.Models.Entities.User.AppUser", "AppUser")
                         .WithMany("ReadingLists")
@@ -3911,7 +3989,7 @@ namespace Kavita.Database.Migrations
                     b.Navigation("AppUser");
                 });
 
-            modelBuilder.Entity("Kavita.Models.Entities.ReadingListItem", b =>
+            modelBuilder.Entity("Kavita.Models.Entities.ReadingLists.ReadingListItem", b =>
                 {
                     b.HasOne("Kavita.Models.Entities.Chapter", "Chapter")
                         .WithMany()
@@ -3919,7 +3997,7 @@ namespace Kavita.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Kavita.Models.Entities.ReadingList", "ReadingList")
+                    b.HasOne("Kavita.Models.Entities.ReadingLists.ReadingList", "ReadingList")
                         .WithMany("Items")
                         .HasForeignKey("ReadingListId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -3940,6 +4018,39 @@ namespace Kavita.Database.Migrations
                     b.Navigation("Chapter");
 
                     b.Navigation("ReadingList");
+
+                    b.Navigation("Series");
+
+                    b.Navigation("Volume");
+                });
+
+            modelBuilder.Entity("Kavita.Models.Entities.ReadingLists.ReadingListRemapRule", b =>
+                {
+                    b.HasOne("Kavita.Models.Entities.User.AppUser", "AppUser")
+                        .WithMany()
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kavita.Models.Entities.Chapter", "Chapter")
+                        .WithMany()
+                        .HasForeignKey("ChapterId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Kavita.Models.Entities.Series", "Series")
+                        .WithMany()
+                        .HasForeignKey("SeriesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kavita.Models.Entities.Volume", "Volume")
+                        .WithMany()
+                        .HasForeignKey("VolumeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Chapter");
 
                     b.Navigation("Series");
 
@@ -4445,7 +4556,7 @@ namespace Kavita.Database.Migrations
                     b.Navigation("ActivityData");
                 });
 
-            modelBuilder.Entity("Kavita.Models.Entities.ReadingList", b =>
+            modelBuilder.Entity("Kavita.Models.Entities.ReadingLists.ReadingList", b =>
                 {
                     b.Navigation("Items");
                 });

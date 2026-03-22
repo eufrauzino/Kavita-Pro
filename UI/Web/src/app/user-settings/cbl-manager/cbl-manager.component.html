@@ -1,0 +1,226 @@
+<ng-container *transloco="let t; prefix:'cbl-manager'">
+
+  <div class="position-relative">
+    @if (!accountService.hasReadOnlyRole()) {
+      <div class="position-absolute custom-position d-flex gap-2">
+        <button class="btn btn-outline-primary" (click)="selectedList.set(undefined)" [title]="t('add')">
+          <i class="fa fa-plus" aria-hidden="true"></i><span class="phone-hidden ms-1">{{t('add')}}</span>
+        </button>
+        <button class="btn btn-outline-primary" (click)="openBrowseModal()" [title]="t('browse-repo')">
+          <i class="fa fa-globe" aria-hidden="true"></i><span class="phone-hidden ms-1">{{t('browse-repo')}}</span>
+        </button>
+      </div>
+    }
+  </div>
+
+  <p class="ps-2">{{t('description')}}</p>
+
+
+  <div class="row g-0 theme-container">
+    <div class="col-lg-5 col-md-6 col-sm-7 col-xs-7 scroller">
+      <div class="pe-2">
+        <div class="mb-2">
+          <input type="text" class="form-control form-control-sm" [placeholder]="t('search-placeholder')"
+                 [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="hasUpdateFilter"
+                   [checked]="hasUpdateFilter()" (change)="hasUpdateFilter.set($any($event.target).checked)">
+            <label class="form-check-label" for="hasUpdateFilter">{{t('filter-has-update')}}</label>
+          </div>
+
+          <div class="btn-group btn-group-sm">
+            <button type="button" class="btn" [class.btn-primary]="providerFilter() === null"
+                    [class.btn-outline-primary]="providerFilter() !== null"
+                    (click)="setProviderFilter(null)">{{t('filter-all')}}</button>
+            <button type="button" class="btn" [class.btn-primary]="providerFilter() === ReadingListProvider.None"
+                    [class.btn-outline-primary]="providerFilter() !== ReadingListProvider.None"
+                    (click)="setProviderFilter(ReadingListProvider.None)">{{t('filter-local')}}</button>
+            <button type="button" class="btn" [class.btn-primary]="providerFilter() === ReadingListProvider.File"
+                    [class.btn-outline-primary]="providerFilter() !== ReadingListProvider.File"
+                    (click)="setProviderFilter(ReadingListProvider.File)">{{t('provider-file')}}</button>
+            <button type="button" class="btn" [class.btn-primary]="providerFilter() === ReadingListProvider.Url"
+                    [class.btn-outline-primary]="providerFilter() !== ReadingListProvider.Url"
+                    (click)="setProviderFilter(ReadingListProvider.Url)">{{t('provider-url')}}</button>
+          </div>
+        </div>
+
+        <div class="fw-bold section-header mb-1">{{t('downloaded')}}</div>
+
+        <ul class="list-group list-group-flush list-scroll">
+          @for (readingList of filteredLists(); track readingList.id) {
+            <ng-container [ngTemplateOutlet]="readingListOption" [ngTemplateOutletContext]="{ $implicit: readingList}" />
+          } @empty {
+            <li class="list-group-item text-muted">{{t('no-results')}}</li>
+          }
+        </ul>
+      </div>
+    </div>
+
+    <div class="col-lg-7 col-md-6 col-sm-4 col-xs-4 ps-3">
+      <form [formGroup]="form">
+      <div class="card p-3">
+
+        @let selectedItem = selectedList();
+        @if (showUploadFlow()) {
+          <div class="row pb-4">
+            <div class="mx-auto">
+              <div class="d-flex justify-content-center">
+                <div class="d-flex justify-content-evenly">
+                  {{t('preview-default')}}
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+          @if (files && files.length > 0) {
+            <app-loading [loading]="isUploadingCbl()" />
+          } @else if (!accountService.hasReadOnlyRole()) {
+            <ngx-file-drop (onFileDrop)="dropped($event)" [accept]="acceptableExtensions" [directory]="false"
+                           dropZoneClassName="file-upload" contentClassName="file-upload-zone">
+
+              <ng-template ngx-file-drop-content-tmp let-openFileSelector="openFileSelector">
+                @switch (uploadMode()) {
+                  @case ('all') {
+                    <div class="row g-0 mt-3 pb-3">
+                      <div class="mx-auto">
+                        <div class="row g-0 mb-3">
+                          <i class="fa fa-file-upload mx-auto" style="font-size: 1.5rem; width: 1.25rem;" aria-hidden="true"></i>
+                        </div>
+
+                        <div class="d-flex justify-content-center">
+                          <div class="d-flex justify-content-evenly">
+                            <a href="javascript:void(0)" (click)="uploadMode.set('url')">
+                              <span class="d-none d-md-inline">{{t('enter-an-url-pre-title', {url: ''})}}</span>{{t('url')}}
+                            </a>
+                            <span class="ps-1 pe-1">•</span>
+                            <span class="pe-0" href="javascript:void(0)">{{t('drag-n-drop')}}</span>
+                            <span class="ps-1 pe-1">•</span>
+                            <a class="pe-0" href="javascript:void(0)" (click)="openFileSelector()">{{t('upload')}}<span class="phone-hidden"> {{t('upload-continued')}}</span></a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                  @case ('url') {
+                    <div class="row g-0 mt-3 pb-3 ms-md-2 me-md-2">
+                      <div class="input-group col-auto me-md-2" style="width: 83%">
+                        <label class="input-group-text" for="load-url">{{t('url-label')}}</label>
+                        <input type="text" autofocus autocomplete="off" class="form-control" formControlName="cblUrl"
+                               placeholder="https://" id="load-url">
+                        <button class="btn btn-outline-secondary" type="button"
+                                (click)="uploadFromUrl(); uploadMode.set('all')"
+                                [disabled]="(form.get('cblUrl')?.value || '').length === 0">
+                          {{t('load')}}
+                        </button>
+                      </div>
+                      <button class="btn btn-secondary col-auto" (click)="uploadMode.set('all')">
+                        <i class="fas fa-share" aria-hidden="true" style="transform: rotateY(180deg)"></i>&nbsp;
+                        <span class="phone-hidden">{{t('back')}}</span>
+                      </button>
+                    </div>
+                  }
+                }
+              </ng-template>
+
+            </ngx-file-drop>
+          }
+        } @else if(selectedItem) {
+
+          <div class="d-flex gap-3">
+            <app-image class="detail-cover" [imageUrl]="imageService.getReadingListCoverImage(selectedItem.id)" />
+
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between align-items-start">
+                <h4 class="mb-1">{{selectedItem.title}}</h4>
+                <div class="d-flex gap-2">
+                  @if (!accountService.hasReadOnlyRole()) {
+                    <button class="btn btn-outline-danger btn-sm" (click)="deleteList(selectedItem)">
+                      <i class="fa fa-trash-alt" aria-hidden="true"></i><span class="phone-hidden ms-1">{{t('delete')}}</span>
+                    </button>
+                  }
+                  @if (selectedItem.canSync) {
+                    <button class="btn btn-primary btn-sm" [disabled]="!selectedItem.hasRemoteChange">{{t('sync')}}</button>
+                  }
+                </div>
+              </div>
+
+              @if (selectedItem.canSync) {
+                <span class="pill p-1 me-1 provider">{{selectedItem.provider | readingListProvider}}</span>
+              }
+
+              <div class="text-muted mt-1" style="font-size: 0.9rem;">
+                @if (selectedItem.ageRating) {
+                  <span>{{selectedItem.ageRating | ageRating}}</span>
+                }
+                @if (selectedItem.startingYear > 0) {
+                  @if (selectedItem.ageRating) {
+                    <span> · </span>
+                  }
+                  <span>{{selectedItem.startingMonth}}/{{selectedItem.startingYear}} – {{selectedItem.endingMonth}}/{{selectedItem.endingYear}}</span>
+                }
+                @if (selectedItem.ageRating || selectedItem.startingYear > 0) {
+                  <span> · </span>
+                }
+                <span>{{selectedItem.itemCount}} {{t('items-count')}}</span>
+              </div>
+            </div>
+          </div>
+
+          @if (selectedItem.summary) {
+            <div class="mt-3">
+              <app-read-more [text]="selectedItem.summary" />
+            </div>
+          }
+
+          <div class="mt-3">
+            <a class="btn btn-outline-primary btn-sm" [routerLink]="'/lists/' + selectedItem.id">
+              {{t('view-list')}} <i class="fa fa-arrow-right ms-1" aria-hidden="true"></i>
+            </a>
+          </div>
+
+          @if (selectedItem.canSync && selectedItem.lastSyncedDate) {
+            <div class="mt-3 text-muted" style="font-size: 0.8rem;">
+              <span>{{t('last-synced', {date: (selectedItem.lastSyncedDate | date)})}}</span>
+              @if (selectedItem.downloadUrl) {
+                <span> · {{t('source')}}: {{selectedItem.downloadUrl}}</span>
+              }
+            </div>
+          }
+
+        } @else {
+          <p>You lack the ability to interact with this content.</p>
+        }
+      </div>
+      </form>
+    </div>
+  </div>
+
+
+  <ng-template #readingListOption let-item>
+    @if (item !== undefined) {
+      <li class="list-group-item d-flex justify-content-between align-items-start clickable rounded mt-1"
+          [class.active]="selectedList() && selectedList()?.id === item.id"
+          (click)="selectList(item)">
+        <div class="ms-2 me-auto">
+          <div class="fw-bold">
+            <app-promoted-icon [promoted]="item.promoted" />
+            {{item.title}}
+          </div>
+          <span class="pill p-1 me-1">{{item.itemCount}} {{t('items-count')}}</span>
+          @if (item.canSync) {
+            <span class="pill p-1 me-1 provider">{{item.provider | readingListProvider}}</span>
+          }
+          @if (item.hasRemoteChange) {
+            <span class="pill p-1 me-1 update-available">{{t('update-available')}}</span>
+          }
+        </div>
+      </li>
+    }
+  </ng-template>
+
+
+</ng-container>

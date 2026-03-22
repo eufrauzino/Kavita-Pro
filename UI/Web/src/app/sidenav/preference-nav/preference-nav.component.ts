@@ -68,7 +68,8 @@ export enum SettingsTabId {
   Scrobbling = 'scrobbling',
   ScrobblingHolds = 'scrobble-holds',
   Customize = 'customize',
-  CBLImport = 'cbl-import'
+  CBLImport = 'cbl-import',
+  RemapRules = 'remap-rules',
 }
 
 export enum SettingSectionId {
@@ -240,6 +241,7 @@ export class PreferenceNavComponent implements AfterViewInit {
           new SideNavItem(SettingsTabId.Theme),
           new SideNavItem(SettingsTabId.Font),
           new SideNavItem(SettingsTabId.Devices),
+          new SideNavItem(SettingsTabId.RemapRules, [], undefined, [Role.ReadOnly]),
         ]
       },
       {

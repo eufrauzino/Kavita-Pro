@@ -615,6 +615,31 @@
         "failure": "Failure"
     },
 
+    "cbl-match-tier-pipe": {
+        "remap-rule": "Remap Rule",
+        "external-id": "External ID",
+        "exact-name": "Exact Name",
+        "comicvine-naming": "ComicVine Naming",
+        "article-stripped": "Article Stripped",
+        "reprint-stripped": "Reprint Stripped",
+        "alternate-series": "Alternate Series",
+        "user-decision": "User Decision",
+        "unmatched": "Unmatched"
+    },
+
+    "cbl-import-reason-pipe": {
+        "chapter-missing": "Chapter Missing",
+        "volume-missing": "Volume Missing",
+        "series-missing": "Series Not Found",
+        "name-conflict": "Name Conflict",
+        "all-series-missing": "All Series Missing",
+        "empty-file": "Empty File",
+        "series-collision": "Multiple Series Match",
+        "all-chapter-missing": "All Chapters Missing",
+        "success": "Success",
+        "invalid-file": "Invalid File"
+    },
+
     "cbl-conflict-reason-pipe": {
         "all-series-missing": "Your account is missing access to all series in the list or Kavita does not have anything present in the list.",
         "chapter-missing": "{{series}}: Chapter {{chapter}} is missing from Kavita. This item will be skipped.",
@@ -1996,7 +2021,8 @@
         "theme": "Theme",
         "font": "Epub Fonts",
         "customize": "Customize",
-        "cbl-import": "CBL Reading List",
+        "cbl-import": "Reading List Manager",
+        "remap-rules": "Remap Rules",
         "mal-stack-import": "MAL Stack",
         "admin-public-metadata": "Manage Metadata"
     },
@@ -2048,6 +2074,142 @@
         "key-bind-tooltip-page-down": "Move one page downwards",
         "key-bind-title-offset-double-page": "Offset double page",
         "key-bind-tooltip-offset-double-page": "Offset pages for double page spread alignment"
+    },
+
+    "cbl-manager": {
+        "browse-repo": "Browse CBLs",
+        "description": "You can import Reading Lists from file, url, or browse the CBL Repo. Lists created from an online source will automatically update in the background or on demand.",
+        "url": "Url to CBL",
+        "preview-default": "Upload your own CBL v1/v2 file for import",
+        "enter-an-url-pre-title": "{{font-manager.enter-an-url-pre-title}}",
+        "drag-n-drop": "{{cover-image-chooser.drag-n-drop}}",
+        "upload": "{{cover-image-chooser.upload}}",
+        "upload-continued": "a cbl file",
+        "downloaded": "Downloaded",
+        "url-label": "Url",
+        "load": "Load",
+        "back": "Back",
+        "items-count": "items",
+        "provider-url": "URL",
+        "provider-file": "File",
+        "update-available": "Update available",
+        "search-placeholder": "Search reading lists...",
+        "filter-has-update": "Has update",
+        "filter-all": "All",
+        "filter-local": "Local",
+        "no-results": "No matching reading lists",
+        "add": "Add",
+        "sync": "Sync",
+        "delete": "Delete",
+        "view-list": "View Reading List",
+        "last-synced": "Last synced {{date}}",
+        "source": "Source"
+    },
+
+    "import-cbl-modal": {
+        "title": "CBL Importer",
+        "close": "{{common.close}}",
+        "matched-count": "{{count}} matched",
+        "issues-count": "{{count}} issues",
+        "matched-items-header": "Matched Items",
+        "issues-header": "Items Needing Attention",
+        "remap-rules-header": "Remap Rules",
+        "tier-label": "Matched via",
+        "skip-item": "Skip",
+        "select-series": "Search for series...",
+        "pick-candidate": "Select correct series",
+        "save-remap-prompt": "Save this mapping as a remap rule for future imports?",
+        "finalize": "Import All",
+        "finalize-single": "Import",
+        "previous-file": "Previous",
+        "next-file": "Next",
+        "file-counter": "File {{current}} of {{total}}",
+        "no-remap-rules": "No remap rules",
+        "delete-rule": "Delete",
+        "manage-rules": "Manage Remap Rules",
+        "col-series": "Requested Series",
+        "col-vol-issue": "Requested Vol / Issue",
+        "col-status": "Status",
+        "col-matched-series": "Matched Series",
+        "col-matched-issue": "Matched Issue",
+        "col-action": "Action",
+        "resolve": "Resolve",
+        "select-chapter": "Select the matching chapter...",
+        "hide-matched": "Hide Matched",
+        "show-matched": "Show Matched",
+        "edit-match": "Edit match",
+        "cancel": "Cancel",
+        "undo": "Undo",
+        "remap-rule-used": "Matched via remap rule",
+        "import-success": "Successfully imported {{count}} reading list(s)",
+        "processing": "Processing...",
+        "new-list": "New",
+        "update-list": "Update",
+        "volume-num": "{{common.volume-num-shorthand}}",
+        "issue-num": "{{common.issue-num-shorthand}}"
+    },
+
+    "manage-remap-rules-modal": {
+        "title": "Manage Remap Rules",
+        "close": "{{common.close}}",
+        "no-rules": "No remap rules saved",
+        "delete-rule": "Delete",
+        "volume-num": "{{common.volume-num-shorthand}}",
+        "issue-num": "{{common.issue-num-shorthand}}",
+        "global": "Global"
+    },
+
+    "manage-remap-rules": {
+        "create-rule": "Create Rule",
+        "new-rule-title": "New Remap Rule",
+        "cbl-series-name-label": "CBL Series Name",
+        "cbl-series-name-placeholder": "Enter CBL series name...",
+        "kavita-series-label": "Kavita Series",
+        "save": "{{common.save}}",
+        "cancel": "{{common.cancel}}",
+        "my-rules-header": "My Rules",
+        "global-rules-header": "Global Rules",
+        "other-users-rules-header": "Other Users' Rules",
+        "cbl-name-col": "CBL Name",
+        "maps-to-col": "Maps To",
+        "vol-issue-col": "Vol / Issue",
+        "created-col": "Created",
+        "created-by-col": "Created By",
+        "user-col": "User",
+        "delete": "{{common.delete}}",
+        "promote": "{{actionable.promote}}",
+        "promote-tooltip": "Promote to global rule",
+        "demote": "Demote",
+        "demote-tooltip": "Demote to user rule",
+        "by": "by",
+        "rule-created": "Remap rule created",
+        "rule-deleted": "Remap rule deleted",
+        "rule-promoted": "Rule promoted to global",
+        "rule-demoted": "Rule demoted to user scope",
+        "confirm-delete": "Are you sure you want to delete this remap rule?",
+        "volume-num": "{{common.volume-num-shorthand}}",
+        "issue-num": "{{common.issue-num-shorthand}}"
+    },
+
+    "browse-cbl-repo-modal": {
+        "title": "CBL Repo Browser",
+        "rate-limit-warning": "Kavita is coming close to hitting Rate Limit for GitHub! You have {{remaining}} calls left.",
+        "rate-limit-resets": "Rate Limit resets {{time}}",
+        "breadcrumb-alt-label": "Breadcrumbs",
+        "root-alt-label": "Root folder",
+        "instructions": "Browse for Reading Lists to download. Downloaded files will be kept in sync with your library.",
+        "file-browser-label": "CBL Repo Browser",
+        "type-header": "File Type",
+        "name-header": "Name",
+        "select-all-files": "Select All",
+        "loading": "{{common.loading}}",
+        "select-file-alt-label": "Select File: {{name}}",
+        "empty-directory": "Empty Directory",
+        "cancel": "{{common.cancel}}",
+        "served-from-cache": "Served from Cache",
+        "download": "Download",
+        "owned-label": "Owned"
+
     },
 
     "collection-detail": {
@@ -2194,6 +2356,12 @@
         "title": "{{download-queue-drawer.title}}"
     },
 
+    "reading-list-provider-pipe": {
+        "none": "System",
+        "file": "File",
+        "url": "Url"
+    },
+
     "shortcuts-modal": {
         "title": "Keyboard Shortcuts",
         "close": "{{common.close}}",
@@ -2300,7 +2468,7 @@
         "month-label": "Month",
         "ending-title": "Ending",
         "starting-title": "Starting",
-        "promote-label": "Promote",
+        "promote-label": "{{actionable.promote}}",
         "promote-tooltip": "Promotion means that the collection can be seen server-wide, not just for you. All series within this collection will still have user-access restrictions placed on them."
     },
 
@@ -2319,9 +2487,9 @@
         "configure-step": "Configure",
         "conflicts-step": "Resolve collisions",
         "finalize-step": "Finalize",
-        "prev": "{{import-cbl-modal.prev}}",
-        "import": "{{import-cbl-modal.import}}",
-        "next": "{{import-cbl-modal.next}}",
+        "prev": "{{import-cbl.prev}}",
+        "import": "{{import-cbl.import}}",
+        "next": "{{import-cbl.next}}",
         "save": "{{common.save}}",
 
         "import-description": "Upload a file you, or someone else, has exported to replace or merge with your current settings.",
@@ -2353,7 +2521,7 @@
         "finalize-title": "Preview of your settings, press save to finish your import"
     },
 
-    "import-cbl-modal": {
+    "import-cbl": {
         "close": "{{common.close}}",
         "title": "CBL Import",
         "help-label": "{{common.help}}",
@@ -3305,6 +3473,10 @@
 
 
     "toasts": {
+        "save-remap-rule": "Save \"{{from}} → {{to}}\" as a remap rule for future imports?",
+        "import-complete": "Import complete",
+        "failed-to-validate": "Failed to validate file",
+        "failed-to-import": "Failed to import {{name}}",
         "no-pages": "There are no pages. Kavita was not able to read this archive.",
         "scan-queued": "Scan queued for {{name}}",
         "server-settings-updated": "Server settings updated",

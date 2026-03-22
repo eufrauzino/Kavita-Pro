@@ -2,7 +2,8 @@
 
 namespace Kavita.Models.DTOs.ReadingLists.CBL;
 
-public record CblImportOptions
+// TODO: Validate if we want to keep this. From testing, it doesn't seem necessary
+public sealed record CblImportOptions
 {
     /// <summary>
     /// Weighs ComicVine Matching higher

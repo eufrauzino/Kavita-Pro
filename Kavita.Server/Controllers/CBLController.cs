@@ -1,140 +1,396 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
-using Kavita.API.Attributes;
+using Kavita.API.Database;
 using Kavita.API.Services;
-using Kavita.API.Services.Reading;
 using Kavita.API.Services.ReadingLists;
+using Kavita.Common.Extensions;
+using Kavita.Database;
 using Kavita.Models.Constants;
 using Kavita.Models.DTOs.ReadingLists.CBL;
-using Kavita.Models.DTOs.ReadingLists.CBL.V1;
+using Kavita.Models.Entities.Enums.ReadingList;
+using Kavita.Models.Entities.ReadingLists;
 using Kavita.Server.Attributes;
-using Kavita.Services.Reading;
+using Flurl.Http;
+using Kavita.Models.DTOs.ReadingLists.CBL.Import;
+using Kavita.Models.DTOs.ReadingLists.CBL.RemapRules;
+using Kavita.Models.DTOs.Uploads;
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.Annotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kavita.Server.Controllers;
 
 /// <summary>
 /// Responsible for the CBL import flow
 /// </summary>
-public class CblController( IReadingListService readingListService, IDirectoryService directoryService) : BaseApiController
+public class CblController(IReadingListService readingListService, IDirectoryService directoryService,
+    ICblGithubService cblGithubService, DataContext dataContext, ICblImportService cblImporterService,
+    IUnitOfWork unitOfWork, IMapper mapper, ILocalizationService localizationService) : BaseApiController
 {
     /// <summary>
-    /// The first step in a cbl import. This validates the cbl file that if an import occured, would it be successful.
-    /// If this returns errors, the cbl will always be rejected by Kavita.
+    /// Saves an uploaded CBL file to disk without importing. Returns the saved file info.
     /// </summary>
-    /// <param name="cbl">FormBody with parameter name of cbl</param>
-    /// <param name="useComicVineMatching">Use comic vine matching or not. Defaults to false</param>
-    /// <returns></returns>
-    [HttpPost("validate")]
-    [SwaggerIgnore]
-    public async Task<ActionResult<CblImportSummaryDto>> ValidateCbl(IFormFile cbl, [FromQuery] bool useComicVineMatching = false)
+    [HttpPost("file-import")]
+    [DisallowRole(PolicyConstants.ReadOnlyRole)]
+    public async Task<ActionResult<CblSavedFileDto>> SaveCblFromFile(IFormFile cblFile)
     {
         var userId = UserId;
+        var filename = cblFile.FileName;
+
+        var ext = Path.GetExtension(filename);
+        if (!ext.Equals(".cbl", StringComparison.OrdinalIgnoreCase)
+            && !ext.Equals(".json", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("Only .cbl and .json files are allowed");
+        }
+
+        if (filename.Contains(".exe", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("Invalid filename");
+        }
+
+        await SaveCblFile(cblFile, userId, filename);
+
+        return Ok(new CblSavedFileDto
+        {
+            Name = filename,
+            FileName = filename,
+            Provider = ReadingListProvider.File
+        });
+    }
+
+    /// <summary>
+    /// Downloads a CBL file from a URL and saves it to disk without importing.
+    /// </summary>
+    [HttpPost("upload-cbl-file")]
+    [DisallowRole(PolicyConstants.ReadOnlyRole)]
+    public async Task<ActionResult<CblSavedFileDto>> SaveCblFromUrl(UploadUrlDto dto)
+    {
+        var dir = GetCblManagerFolder(UserId);
+        Directory.CreateDirectory(dir);
+
+        string fullPath;
+        string filename;
         try
         {
-            var cblReadingList = await SaveAndLoadCblFile(cbl);
-            var importSummary = await readingListService.ValidateCblFile(userId, cblReadingList, useComicVineMatching);
-            importSummary.FileName = cbl.FileName;
+            fullPath = await dto.Url.DownloadFileAsync(dir);
+            filename = Path.GetFileName(fullPath);
+        }
+        catch (FlurlHttpException)
+        {
+            return BadRequest("Unable to download file from URL");
+        }
 
-            return Ok(importSummary);
-        }
-        catch (ArgumentNullException)
+        var ext = Path.GetExtension(filename);
+        if (!ext.Equals(".cbl", StringComparison.OrdinalIgnoreCase)
+            && !ext.Equals(".json", StringComparison.OrdinalIgnoreCase))
         {
-            return Ok(new CblImportSummaryDto
-            {
-                FileName = cbl.FileName,
-                Success = CblImportResult.Fail,
-                Results =
-                [
-                    new CblBookResult
-                    {
-                        Reason = CblImportReason.InvalidFile
-                    }
-                ]
-            });
+            if (System.IO.File.Exists(fullPath)) System.IO.File.Delete(fullPath);
+            return BadRequest("Only .cbl and .json files are allowed");
         }
-        catch (InvalidOperationException)
+
+        return Ok(new CblSavedFileDto
         {
-            return Ok(new CblImportSummaryDto
-            {
-                FileName = cbl.FileName,
-                Success = CblImportResult.Fail,
-                Results =
-                [
-                    new CblBookResult
-                    {
-                        Reason = CblImportReason.InvalidFile
-                    }
-                ]
-            });
-        }
+            Name = filename,
+            FileName = filename,
+            Provider = ReadingListProvider.Url
+        });
     }
 
 
     /// <summary>
-    /// Performs the actual import (assuming dryRun = false)
+    /// Downloads selected CBL files from the GitHub repo and saves them to disk without importing.
     /// </summary>
-    /// <param name="cbl">FormBody with parameter name of cbl</param>
-    /// <param name="dryRun">If true, will only emulate the import but not perform. This should be done to preview what will happen</param>
-    /// <param name="useComicVineMatching">Use comic vine matching or not. Defaults to false</param>
-    /// <returns></returns>
-    [SwaggerIgnore]
-    [HttpPost("import")]
+    [HttpPost("repo-import")]
     [DisallowRole(PolicyConstants.ReadOnlyRole)]
-    public async Task<ActionResult<CblImportSummaryDto>> ImportCbl(IFormFile cbl, [FromQuery] bool dryRun = false, [FromQuery] bool useComicVineMatching = false)
+    public async Task<ActionResult<IList<CblSavedFileDto>>> SaveCblFromRepo([FromBody] CblRepoImportRequestDto request)
     {
-        try
-        {
-            var userId = UserId;
-            var cblReadingList = await SaveAndLoadCblFile(cbl);
-            var importSummary = await readingListService.CreateReadingListFromCbl(userId, cblReadingList, dryRun, useComicVineMatching);
-            importSummary.FileName = cbl.FileName;
+        var userId = UserId;
+        var savedFiles = new List<CblSavedFileDto>();
 
-            return Ok(importSummary);
-        } catch (ArgumentNullException)
+        foreach (var item in request.Items)
         {
-            return Ok(new CblImportSummaryDto
+            var content = await cblGithubService.GetFileContent(item.Path);
+            SaveCblFileFromContent(content, userId, item.Name);
+
+            savedFiles.Add(new CblSavedFileDto
             {
-                FileName = cbl.FileName,
-                Success = CblImportResult.Fail,
-                Results =
-                [
-                    new CblBookResult
-                    {
-                        Reason = CblImportReason.InvalidFile
-                    }
-                ]
-            });
-        }
-        catch (InvalidOperationException)
-        {
-            return Ok(new CblImportSummaryDto
-            {
-                FileName = cbl.FileName,
-                Success = CblImportResult.Fail,
-                Results =
-                [
-                    new CblBookResult
-                    {
-                        Reason = CblImportReason.InvalidFile
-                    }
-                ]
+                Name = item.Name,
+                FileName = item.Name,
+                Provider = ReadingListProvider.Url,
+                RepoPath = item.Path,
+                DownloadUrl = item.DownloadUrl,
+                Sha = item.Sha
             });
         }
 
+        return Ok(savedFiles);
     }
 
-    private async Task<CblReadingList> SaveAndLoadCblFile(IFormFile file)
+    /// <summary>
+    /// Validates an already-saved CBL file on disk. Called by the import modal after remap rule changes.
+    /// </summary>
+    [HttpPost("re-validate")]
+    [DisallowRole(PolicyConstants.ReadOnlyRole)]
+    public async Task<ActionResult<CblImportSummaryDto>> ReValidate([FromBody] CblReValidateRequestDto dto)
     {
-        var filename = Path.GetRandomFileName();
-        var outputFile = Path.Join(directoryService.TempDirectory, filename);
+        if (!ValidateFilename(dto.FileName)) return BadRequest("Invalid filename");
+
+        var userId = UserId;
+        var fullPath = Path.Join(GetCblManagerFolder(userId), dto.FileName);
+
+        if (!System.IO.File.Exists(fullPath))
+        {
+            return BadRequest("File not found on server");
+        }
+
+        var summary = await cblImporterService.ValidateList(userId, fullPath, new CblImportOptions());
+        summary.FileName = dto.FileName;
+        return Ok(summary);
+    }
+
+    /// <summary>
+    /// Finalizes the import of a saved CBL file with user decisions
+    /// </summary>
+    [HttpPost("finalize-import")]
+    [DisallowRole(PolicyConstants.ReadOnlyRole)]
+    public async Task<ActionResult<CblImportSummaryDto>> FinalizeImport([FromBody] CblFinalizeRequestDto dto)
+    {
+        if (!ValidateFilename(dto.FileName)) return BadRequest("Invalid filename");
+
+        var userId = UserId;
+        var fullPath = Path.Join(GetCblManagerFolder(userId), dto.FileName);
+
+        if (!System.IO.File.Exists(fullPath))
+        {
+            return BadRequest("File not found on server");
+        }
+
+        try
+        {
+            var summary = await cblImporterService.UpsertReadingList(
+                userId, fullPath, new CblImportOptions(), dto.Decisions);
+            summary.FileName = dto.FileName;
+
+            // Set provider and sync tracking fields
+            if (summary.Success != CblImportResult.Fail && dto.Provider != ReadingListProvider.None)
+            {
+                var readingList = await unitOfWork.ReadingListRepository
+                    .GetReadingListByTitleAsync(summary.CblName, userId);
+
+                if (readingList != null)
+                {
+                    readingList.Provider = dto.Provider;
+
+                    // Repo-specific sync tracking
+                    if (!string.IsNullOrEmpty(dto.RepoPath))
+                    {
+                        readingList.SourcePath = dto.RepoPath;
+                        readingList.DownloadUrl = dto.DownloadUrl;
+                        readingList.ShaHash = dto.Sha;
+                        readingList.LastSyncedUtc = DateTime.UtcNow;
+                        readingList.LastSyncCheckUtc = DateTime.UtcNow;
+                    }
+
+                    await readingListService.CalculateReadingListAgeRating(readingList);
+                    await readingListService.CalculateStartAndEndDates(readingList);
+
+                    await unitOfWork.CommitAsync();
+                }
+            }
+
+            return Ok(summary);
+        }
+        finally
+        {
+            if (System.IO.File.Exists(fullPath))
+            {
+                System.IO.File.Delete(fullPath);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Returns all remap rules accessible to the current user (own rules + global/admin rules).
+    /// </summary>
+    [HttpGet("remap-rules")]
+    public async Task<ActionResult<IList<RemapRuleDto>>> GetRemapRules()
+    {
+        var rules = await unitOfWork.RemapRuleRepository.GetRulesForUserAsync(UserId);
+        return Ok(mapper.Map<IList<RemapRuleDto>>(rules));
+    }
+
+    /// <summary>
+    /// Admin-only: returns all rules across all users.
+    /// </summary>
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
+    [HttpGet("remap-rules/all")]
+    public async Task<ActionResult<IList<RemapRuleDto>>> GetAllRemapRules()
+    {
+        var rules = await unitOfWork.RemapRuleRepository.GetAllRulesAsync();
+        return Ok(mapper.Map<IList<RemapRuleDto>>(rules));
+    }
+
+    /// <summary>
+    /// Creates a new series-level remap rule.
+    /// </summary>
+    [HttpPost("remap-rules")]
+    [DisallowRole(PolicyConstants.ReadOnlyRole)]
+    public async Task<ActionResult<RemapRuleDto>> CreateRemapRule([FromBody] CreateRemapRuleDto dto)
+    {
+        var series = await unitOfWork.SeriesRepository.GetSeriesByIdAsync(dto.SeriesId, ct: HttpContext.RequestAborted);
+        if (series == null) return BadRequest(await localizationService.Translate(UserId, "series-doesnt-exist"));
+
+        var rule = new ReadingListRemapRule
+        {
+            NormalizedCblSeriesName = dto.CblSeriesName.ToNormalized(),
+            CblSeriesName = dto.CblSeriesName,
+            SeriesId = dto.SeriesId,
+            CblVolume = dto.CblVolume,
+            CblNumber = dto.CblNumber,
+            VolumeId = dto.VolumeId,
+            ChapterId = dto.ChapterId,
+            SeriesNameAtMapping = series.Name,
+            AppUserId = UserId,
+            IsGlobal = false,
+            CreatedUtc = DateTime.UtcNow
+        };
+
+        unitOfWork.RemapRuleRepository.Add(rule);
+        await unitOfWork.CommitAsync();
+
+        return Ok(mapper.Map<RemapRuleDto>(rule));
+    }
+
+    /// <summary>
+    /// Promotes a remap rule to global scope. Admin-only.
+    /// </summary>
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
+    [DisallowRole(PolicyConstants.ReadOnlyRole)]
+    [HttpPost("remap-rules/{id}/promote")]
+    public async Task<ActionResult<RemapRuleDto>> PromoteRemapRule(int id)
+    {
+        var rule = await unitOfWork.RemapRuleRepository.GetByIdAsync(id, HttpContext.RequestAborted);
+        if (rule == null) return NotFound();
+        rule.IsGlobal = true;
+        await unitOfWork.CommitAsync();
+        return Ok(mapper.Map<RemapRuleDto>(rule));
+    }
+
+    /// <summary>
+    /// Demotes a global remap rule back to user-scoped. Admin-only.
+    /// </summary>
+    [Authorize(Policy = PolicyGroups.AdminPolicy)]
+    [DisallowRole(PolicyConstants.ReadOnlyRole)]
+    [HttpPost("remap-rules/{id}/demote")]
+    public async Task<ActionResult<RemapRuleDto>> DemoteRemapRule(int id)
+    {
+        var rule = await unitOfWork.RemapRuleRepository.GetByIdAsync(id, HttpContext.RequestAborted);
+        if (rule == null) return NotFound();
+
+        rule.IsGlobal = false;
+        await unitOfWork.CommitAsync();
+
+        return Ok(mapper.Map<RemapRuleDto>(rule));
+    }
+
+    /// <summary>
+    /// Updates a remap rule with issue-level detail (volume/chapter).
+    /// </summary>
+    [HttpPut("remap-rules/{id}")]
+    [DisallowRole(PolicyConstants.ReadOnlyRole)]
+    public async Task<ActionResult<RemapRuleDto>> UpdateRemapRule(int id, [FromBody] UpdateRemapRuleDto dto)
+    {
+        var rule = await unitOfWork.RemapRuleRepository.GetByIdAsync(id);
+        if (rule == null) return NotFound();
+        if (rule.AppUserId != UserId) return Forbid();
+
+        rule.VolumeId = dto.VolumeId;
+        rule.ChapterId = dto.ChapterId;
+        rule.CblVolume = dto.CblVolume;
+        rule.CblNumber = dto.CblNumber;
+
+        await unitOfWork.CommitAsync();
+
+        return Ok(mapper.Map<RemapRuleDto>(rule));
+    }
+
+    /// <summary>
+    /// Deletes a remap rule. Users can only delete their own rules.
+    /// </summary>
+    [HttpDelete("remap-rules/{id}")]
+    [DisallowRole(PolicyConstants.ReadOnlyRole)]
+    public async Task<ActionResult> DeleteRemapRule(int id)
+    {
+        var rule = await unitOfWork.RemapRuleRepository.GetByIdAsync(id);
+        if (rule == null) return NotFound();
+        if (rule.AppUserId != UserId) return Forbid();
+
+        unitOfWork.RemapRuleRepository.Remove(rule);
+        await unitOfWork.CommitAsync();
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Provides the browse CBL Repo interface. Requires Download role.
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    [HttpGet("browse")]
+    [DisallowRole(PolicyConstants.ReadOnlyRole)]
+    public async Task<ActionResult<CblRepoBrowseResultDto>> BrowseCblRepo([FromQuery] string path = "")
+    {
+        if (path.Contains("..") || path.Contains("http://")) return BadRequest();
+
+        var result = await cblGithubService.BrowseRepo(path);
+
+        // TODO: Refactor into CblService - Update Browse Results with sync details from what's on disk
+        var syncedPaths = await dataContext.ReadingList
+            .Where(rl => rl.AppUserId == UserId
+                         && rl.Provider == ReadingListProvider.Url
+                         && rl.SourcePath != null)
+            .Select(rl => new { rl.SourcePath, rl.Id })
+            .ToDictionaryAsync(x => x.SourcePath!, x => x.Id);
+
+        foreach (var item in result.Items.Where(i => !i.IsDirectory))
+        {
+            if (syncedPaths.TryGetValue(item.Path, out var readingListId))
+            {
+                item.ExistingReadingListId = readingListId;
+            }
+        }
+
+        return Ok(result);
+    }
+
+    private async Task<string> SaveCblFile(IFormFile file, int userId, string filename)
+    {
+        var dir = GetCblManagerFolder(userId);
+        Directory.CreateDirectory(dir);
+        var outputFile = Path.Join(dir, filename);
         await using var stream = System.IO.File.Create(outputFile);
         await file.CopyToAsync(stream);
         stream.Close();
-        return ReadingListService.LoadCblFromPath(outputFile);
+        return outputFile;
+    }
+
+    private string SaveCblFileFromContent(string content, int userId, string filename)
+    {
+        var dir = GetCblManagerFolder(userId);
+        Directory.CreateDirectory(dir);
+        var outputFile = Path.Join(dir, filename);
+        System.IO.File.WriteAllText(outputFile, content);
+        return outputFile;
+    }
+
+    private string GetCblManagerFolder(int userId)
+    {
+        return Path.Join(directoryService.TempDirectory, $"{userId}", "cbl-manager-download");
     }
 }

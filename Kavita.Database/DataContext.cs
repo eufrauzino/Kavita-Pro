@@ -8,6 +8,7 @@ using Kavita.Database.Extensions;
 using Kavita.Models.DTOs.Progress;
 using Kavita.Models.Entities;
 using Kavita.Models.Entities.Enums;
+using Kavita.Models.Entities.Enums.ReadingList;
 using Kavita.Models.Entities.Enums.User;
 using Kavita.Models.Entities.Enums.UserPreferences;
 using Kavita.Models.Entities.History;
@@ -16,6 +17,7 @@ using Kavita.Models.Entities.Metadata;
 using Kavita.Models.Entities.MetadataMatching;
 using Kavita.Models.Entities.Person;
 using Kavita.Models.Entities.Progress;
+using Kavita.Models.Entities.ReadingLists;
 using Kavita.Models.Entities.Scrobble;
 using Kavita.Models.Entities.User;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
@@ -97,6 +99,8 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
     public DbSet<ClientDeviceHistory> ClientDeviceHistory { get; set; } = null!;
     public DbSet<AppUserAuthKey> AppUserAuthKey { get; set; } = null!;
 
+    public DbSet<ReadingListRemapRule> ReadingListRemapRule { get; set; } = null!;
+
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
 
@@ -128,6 +132,39 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
         builder.Entity<AppUserCollection>()
             .Property(b => b.AgeRating)
             .HasDefaultValue(AgeRating.Unknown);
+
+        #region Reading List
+        builder.Entity<ReadingList>()
+            .Property(b => b.Provider)
+            .HasDefaultValue(ReadingListProvider.None);
+
+        builder.Entity<ReadingListRemapRule>(entity =>
+        {
+            entity.HasOne(r => r.Series)
+                .WithMany()
+                .HasForeignKey(r => r.SeriesId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(r => r.Volume)
+                .WithMany()
+                .HasForeignKey(r => r.VolumeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(r => r.Chapter)
+                .WithMany()
+                .HasForeignKey(r => r.ChapterId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(r => r.AppUser)
+                .WithMany()
+                .HasForeignKey(r => r.AppUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(r => new { r.NormalizedCblSeriesName, r.IsGlobal, r.AppUserId })
+                .HasDatabaseName("IX_ReadingListRemapRule_NormalizedCblSeriesName_IsGlobal_AppUserId");
+        });
+        #endregion
+
 
         #region Library
 
@@ -303,7 +340,6 @@ public sealed class DataContext : IdentityDbContext<AppUser, AppRole, int,
             .HasDefaultValue(new List<int>());
 
         #endregion
-
 
         #region Reading Sessions & History
         builder.Entity<AppUserReadingSession>()
