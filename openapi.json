@@ -2,12 +2,12 @@
   "openapi": "3.0.4",
   "info": {
     "title": "Kavita",
-    "description": "Kavita provides a set of APIs authenticated via an Auth Key passed in the `x-api-key` header. Generate an Auth Key under User Settings → Manage Auth Keys, paste it into the Authorize panel, and all Try It requests will include it. Assume all fields of a payload are required unless marked optional. Built against v0.8.9.42",
+    "description": "Kavita provides a set of APIs authenticated via an Auth Key passed in the `x-api-key` header. Generate an Auth Key under User Settings → Manage Auth Keys, paste it into the Authorize panel, and all Try It requests will include it. Assume all fields of a payload are required unless marked optional. Built against v0.8.9.43",
     "license": {
       "name": "GPL-3.0",
       "url": "https://github.com/Kareadita/Kavita/blob/develop/LICENSE"
     },
-    "version": "0.8.9.42"
+    "version": "0.8.9.43"
   },
   "servers": [
     {
@@ -25403,22 +25403,25 @@
           1,
           2,
           3,
-          4
+          4,
+          5
         ],
         "type": "integer",
-        "description": "Members:\n- `1` — Role\n- `2` — Name\n- `3` — SeriesCount\n- `4` — ChapterCount",
+        "description": "Members:\n- `1` — Role\n- `2` — Name\n- `3` — SeriesCount\n- `4` — ChapterCount\n- `5` — Library",
         "format": "int32",
         "x-enum-varnames": [
           "Role",
           "Name",
           "SeriesCount",
-          "ChapterCount"
+          "ChapterCount",
+          "Library"
         ],
         "x-enum-descriptions": [
           "Role",
           "Name",
           "SeriesCount",
-          "ChapterCount"
+          "ChapterCount",
+          "Library"
         ]
       },
       "PersonFilterStatementDto": {
@@ -28121,10 +28124,11 @@
           7,
           8,
           9,
-          10
+          10,
+          11
         ],
         "type": "integer",
-        "description": "Members:\n- `1` — SortName\n- `2` — CreatedDate\n- `3` — LastModifiedDate\n- `4` — LastChapterAdded\n- `5` — TimeToRead\n- `6` — ReleaseYear\n- `7` — ReadProgress\n- `8` — AverageRating\n- `9` — Random\n- `10` — UserRating",
+        "description": "Members:\n- `1` — SortName\n- `2` — CreatedDate\n- `3` — LastModifiedDate\n- `4` — LastChapterAdded\n- `5` — TimeToRead\n- `6` — ReleaseYear\n- `7` — ReadProgress\n- `8` — AverageRating\n- `9` — Random\n- `10` — UserRating\n- `11` — UnreadChapterCount",
         "format": "int32",
         "x-enum-varnames": [
           "SortName",
@@ -28136,7 +28140,8 @@
           "ReadProgress",
           "AverageRating",
           "Random",
-          "UserRating"
+          "UserRating",
+          "UnreadChapterCount"
         ],
         "x-enum-descriptions": [
           "SortName",
@@ -28148,7 +28153,8 @@
           "ReadProgress",
           "AverageRating",
           "Random",
-          "UserRating"
+          "UserRating",
+          "UnreadChapterCount"
         ]
       },
       "SeriesSortOptionDto": {
