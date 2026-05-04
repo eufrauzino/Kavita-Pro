@@ -3,7 +3,7 @@ name: Kavita-Pro CI/CD
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build-and-publish:
