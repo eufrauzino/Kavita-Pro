@@ -32,38 +32,32 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: 🔨 Compilar C# e Ajustar Nomes da Família
+      - name: 🔨 Compilar C# e Criar "Atalho"
         run: |
           mkdir -p _output
           
-          # Procura dinamicamente pelo projeto principal
           ARQUIVO_ALVO=$(find . -type f -name "*.csproj" | grep -v "node_modules" | grep -iE "Kavita.Server|API" | head -n 1)
           
-          # Compila a aplicação
           dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./Kavita
           
           cd Kavita
           rm -f createdump Copyright LICENSE README.md || true
           
-          # 🔥 O SEGREDO MÁXIMO: Renomeia o executável E toda a sua família (.dll e .json)
+          # 🔥 O TRUQUE DE MESTRE: Criar um "Script Lançador" em vez de renomear os arquivos!
+          # Isso mantém a integridade do .NET intacta, mas dá ao Docker o arquivo "Kavita" que ele exige.
           if [ -f "Kavita.Server" ]; then
-            mv Kavita.Server Kavita
-            for ext in dll pdb deps.json runtimeconfig.json; do
-              if [ -f "Kavita.Server.$ext" ]; then mv "Kavita.Server.$ext" "Kavita.$ext"; fi
-            done
-            echo "✅ Família Kavita.Server renomeada com sucesso!"
+            echo '#!/bin/sh' > Kavita
+            echo 'exec ./Kavita.Server "$@"' >> Kavita
+            chmod +x Kavita.Server
           elif [ -f "API" ]; then
-            mv API Kavita
-            for ext in dll pdb deps.json runtimeconfig.json; do
-              if [ -f "API.$ext" ]; then mv "API.$ext" "Kavita.$ext"; fi
-            done
-            echo "✅ Família API renomeada com sucesso!"
+            echo '#!/bin/sh' > Kavita
+            echo 'exec ./API "$@"' >> Kavita
+            chmod +x API
           fi
           
           chmod +x Kavita || true
           cd ..
           
-          # Zipa a pasta inteira
           tar -czvf _output/kavita-linux-arm64.tar.gz Kavita/
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura (QEMU)
