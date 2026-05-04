@@ -8,9 +8,6 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: 📥 Clonar o código-fonte
@@ -32,7 +29,7 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: 🔨 Compilar C# e Ajustar Nomes
+      - name: 🔎 RAIO-X BRUTAL (CRASH INTENCIONAL)
         run: |
           mkdir -p _output
           
@@ -40,43 +37,15 @@ jobs:
           
           dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./Kavita
           
-          # 🔥 A CORREÇÃO DE MESTRE:
           cd Kavita
+          rm -f createdump Copyright LICENSE README.md || true
           
-          # 1. ASSASSINA O IMPOSTOR: Apaga o debugger antes que ele cause problemas
-          rm -f createdump
+          echo "========================================================="
+          echo "🚨 ATENÇÃO DOUGLAS: COPIE A LISTA DE ARQUIVOS ABAIXO 🚨"
+          echo "========================================================="
+          # Lista apenas os ficheiros MAIORES que 1 Megabyte
+          find . -type f -size +1M -exec ls -lh {} +
+          echo "========================================================="
           
-          # 2. Renomeia o executável verdadeiro (API) para Kavita
-          if [ -f "API" ]; then
-            mv API Kavita
-            echo "✅ Executável API renomeado para Kavita!"
-          elif [ -f "kavita" ]; then
-            mv kavita Kavita
-          fi
-          
-          chmod +x Kavita || true
-          cd ..
-          
-          # Zipa a pasta inteira
-          tar -czvf _output/kavita-linux-arm64.tar.gz Kavita/
-
-      - name: 🐳 Configurar Emulador Multi-Arquitetura (QEMU)
-        uses: docker/setup-qemu-action@v3
-
-      - name: 🐳 Configurar Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: 🐳 Login no GitHub Container Registry (GHCR)
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 📦 Construir e Publicar a Imagem Docker (ARM64)
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/arm64
-          push: true
-          tags: ghcr.io/eufrauzino/kavita-pro:latest
+          # MATA O PROCESSO DE PROPÓSITO PARA O GITHUB MOSTRAR O LOG!
+          exit 1
