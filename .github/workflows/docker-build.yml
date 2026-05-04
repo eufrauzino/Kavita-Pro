@@ -32,22 +32,21 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: 🔨 Compilar C# (Modo Oficial da Microsoft)
+      - name: 🔨 Compilar C# (Modo Portátil e Oficial)
         run: |
           ARQUIVO_ALVO=$(find . -type f -name "*.csproj" | grep -iE "Kavita.API.csproj|API.csproj|Kavita.Server.csproj" | grep -v "Tests" | head -n 1)
           echo "🎯 Compilando o projeto: $ARQUIVO_ALVO"
           
-          # 🔥 Não tentamos mais criar um executável. Geramos apenas as DLLs puras para a arquitetura ARM64!
-          dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained false -o ./publish
+          # 🔥 O SEGREDO FINAL: Sem "-r linux-arm64". Código 100% portátil. 
+          # E forçamos a geração do runtimeconfig.json!
+          dotnet publish "$ARQUIVO_ALVO" -c Release -o ./publish -p:UseAppHost=false -p:GenerateRuntimeConfigurationFiles=true
 
-      - name: 📝 Criar Dockerfile com Motor .NET Nativo
+      - name: 📝 Criar Dockerfile Oficial
         run: |
           cat <<'EOF' > Dockerfile.oracle
-          # Usa a imagem OFICIAL da Microsoft que já tem o motor 'dotnet' instalado
           FROM mcr.microsoft.com/dotnet/aspnet:8.0
           
-          # Dependências do sistema
-          RUN apt-get update && apt-get install -y sqlite3 libicu-dev tzdata && rm -rf /var/lib/apt/lists/*
+          RUN apt-get update && apt-get install -y ca-certificates sqlite3 libicu-dev tzdata && rm -rf /var/lib/apt/lists/*
           
           WORKDIR /app
           
@@ -57,8 +56,8 @@ jobs:
           EXPOSE 5000
           ENV ASPNETCORE_URLS=http://+:5000
           
-          # 🚀 A CHAVE MESTRA: O motor 'dotnet' roda a DLL diretamente! Sem precisar de permissões ou executáveis!
-          ENTRYPOINT ["/bin/sh", "-c", "NOME=$(ls *.deps.json | head -n 1 | sed 's/\\.deps\\.json/.dll/'); exec dotnet \"./$NOME\""]
+          # Executa a DLL diretamente (O motor dotnet já está no Ubuntu base)
+          ENTRYPOINT ["dotnet", "Kavita.API.dll"]
           EOF
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura
