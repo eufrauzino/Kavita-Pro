@@ -32,41 +32,47 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: 🔨 Compilar C# e Criar "Atalho"
+      - name: 🔨 Compilar C# (A Solução Definitiva - Single File)
         run: |
           mkdir -p _output
           
+          # Encontra o projeto raiz
           ARQUIVO_ALVO=$(find . -type f -name "*.csproj" | grep -v "node_modules" | grep -iE "Kavita.Server|API" | head -n 1)
+          echo "🎯 Compilando o projeto: $ARQUIVO_ALVO"
           
-          dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./Kavita
+          # 🔥 O XEQUE-MATE: Empacota tudo (AppHost, Runtime, DLLs) num ÚNICO ficheiro cego a nomes externos
+          dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./Kavita
           
           cd Kavita
-          rm -f createdump Copyright LICENSE README.md || true
+          # Limpeza de segurança
+          rm -f createdump Copyright LICENSE README.md *.pdb || true
           
-          # 🔥 O TRUQUE DE MESTRE: Criar um "Script Lançador" em vez de renomear os arquivos!
-          # Isso mantém a integridade do .NET intacta, mas dá ao Docker o arquivo "Kavita" que ele exige.
+          # Agora temos apenas um grande ficheiro blindado. Podemos renomeá-lo à vontade!
           if [ -f "Kavita.Server" ]; then
-            echo '#!/bin/sh' > Kavita
-            echo 'exec ./Kavita.Server "$@"' >> Kavita
-            chmod +x Kavita.Server
+            mv Kavita.Server Kavita
           elif [ -f "API" ]; then
-            echo '#!/bin/sh' > Kavita
-            echo 'exec ./API "$@"' >> Kavita
-            chmod +x API
+            mv API Kavita
+          else
+            # Prevenção: Apanha o executável nativo seja qual for o nome que ele tenha gerado
+            MAIOR=$(find . -maxdepth 1 -type f -size +20M -executable | head -n 1)
+            if [ -n "$MAIOR" ]; then
+              mv "$MAIOR" ./Kavita
+            fi
           fi
           
           chmod +x Kavita || true
           cd ..
           
+          # Zipa a pasta com a estrutura /Kavita/Kavita que o Docker exige
           tar -czvf _output/kavita-linux-arm64.tar.gz Kavita/
 
-      - name: 🐳 Configurar Emulador Multi-Arquitetura (QEMU)
+      - name: 🐳 Configurar Emulador Multi-Arquitetura
         uses: docker/setup-qemu-action@v3
 
       - name: 🐳 Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 🐳 Login no GitHub Container Registry (GHCR)
+      - name: 🐳 Login no GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
