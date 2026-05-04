@@ -32,20 +32,23 @@ jobs:
         with:
           dotnet-version: '8.0.x' # Versão que o Kavita exige
 
-      - name: 🔨 Compilar C# para ARM64
+      - name: 🔨 Compilar C# para ARM64 (VM Oracle)
         run: |
           mkdir -p _output
           
-          # Procura o arquivo C#, ignorando a pasta node_modules completamente
-          ARQUIVO_ALVO=$(find . -type f \( -name "*.sln" -o -name "Kavita.csproj" -o -name "API.csproj" \) | grep -v "node_modules" | head -n 1)
+          # Agora procuramos EXCLUSIVAMENTE pelo arquivo .csproj (Ignorando a .sln)
+          # Isso força o .NET a gerar o binário executável limpo, sem misturar projetos
+          ARQUIVO_ALVO=$(find . -type f -name "Kavita.csproj" | grep -v "node_modules" | head -n 1)
           echo "🎯 Arquivo C# principal encontrado em: $ARQUIVO_ALVO"
           
-          # 1. Muda o output para uma pasta chamada "Kavita"
+          # Compila apenas o projeto limpo para a arquitetura da Oracle
           dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./Kavita
           
-          # 2. Zipa a pasta inteira (criando a estrutura correta Kavita/Kavita lá dentro)
+          # Confirmação de segurança: Dá permissão no executável antes mesmo de zipar
+          chmod +x ./Kavita/Kavita || true
+          
+          # Zipa a pasta inteira
           tar -czvf _output/kavita-linux-arm64.tar.gz Kavita/
-
       - name: 🐳 Configurar Emulador Multi-Arquitetura (QEMU)
         uses: docker/setup-qemu-action@v3
 
