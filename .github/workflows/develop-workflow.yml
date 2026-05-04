@@ -3,7 +3,7 @@ name: Kavita-Pro CI/CD
 on:
   push:
     branches:
-      - master # O seu GitHub usa 'master' como principal
+      - master # O robô acorda quando fazes push para a master
 
 jobs:
   build-and-publish:
@@ -30,18 +30,21 @@ jobs:
       - name: 🟣 Preparar o .NET Core (Para o Backend)
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '8.0.x' # Versão que o Kavita exige
 
       - name: 🔨 Compilar C# para ARM64 (VM Oracle)
         run: |
           mkdir -p _output
           
-          # Entra na pasta API correta e compila para o processador da Oracle!
-          cd API
-          dotnet publish -c Release -r linux-arm64 --self-contained true -o ../temp_backend_build
-          cd ..
+          # O robô vai procurar automaticamente pelo arquivo principal do projeto C#
+          # Ele procura por arquivos .sln, Kavita.csproj ou API.csproj
+          ARQUIVO_ALVO=$(find . -name "*.sln" -o -name "Kavita.csproj" -o -name "API.csproj" | head -n 1)
+          echo "🎯 Arquivo C# principal encontrado em: $ARQUIVO_ALVO"
           
-          # Zipa o resultado
+          # Compila usando o arquivo que ele acabou de encontrar para o processador da Oracle
+          dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./temp_backend_build
+          
+          # Zipa o resultado onde o Dockerfile original está à espera
           tar -czvf _output/kavita-backend.tar.gz -C ./temp_backend_build .
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura (QEMU)
