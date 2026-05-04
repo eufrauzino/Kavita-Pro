@@ -3,7 +3,7 @@ name: Kavita-Pro CI/CD
 on:
   push:
     branches:
-      - master 
+      - master # O robô acorda quando fazes push para a master
 
 jobs:
   build-and-publish:
@@ -43,20 +43,23 @@ jobs:
           # Compila o projeto e coloca tudo dentro da pasta Kavita
           dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./Kavita
           
-          # 🔥 O TIRO DE CANHÃO: Força bruta para encontrar e renomear o executável
+          # 🔥 A SOLUÇÃO DEFINITIVA: Limpa textos e procura pelo ficheiro PESADO!
           cd Kavita
-          # Procura o ficheiro executável (sem extensão) dentro da pasta
-          MAIOR_EXECUTAVEL=$(find . -maxdepth 1 -type f ! -name "*.*" -executable | head -n 1)
+          # 1. Apaga ficheiros de texto indesejados para evitar confusão
+          rm -f Copyright LICENSE README.md || true
+          
+          # 2. Procura ficheiros sem extensão que tenham MAIS DE 5 MEGABYTES (O binário executável real)
+          MAIOR_EXECUTAVEL=$(find . -maxdepth 1 -type f ! -name "*.*" -size +5M | head -n 1)
           
           if [ ! -z "$MAIOR_EXECUTAVEL" ]; then
             mv "$MAIOR_EXECUTAVEL" ./Kavita
-            echo "✅ Executável renomeado com sucesso para Kavita!"
+            echo "✅ Binário executável real renomeado com sucesso para Kavita!"
           else
-            echo "⚠️ Nenhum executável sem extensão encontrado. Tentando renomear API..."
+            echo "⚠️ Nenhum ficheiro grande encontrado. A forçar renomeação direta..."
             mv API Kavita || true
           fi
           
-          # Garante que tem permissão de execução
+          # Dá permissão de execução
           chmod +x Kavita || true
           cd ..
           
