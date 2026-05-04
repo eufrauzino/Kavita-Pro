@@ -3,7 +3,7 @@ name: Kavita-Pro CI/CD
 on:
   push:
     branches:
-      - master
+      - master # O seu GitHub usa 'master' como principal
 
 jobs:
   build-and-publish:
@@ -30,19 +30,25 @@ jobs:
       - name: 🟣 Preparar o .NET Core (Para o Backend)
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x' # O Kavita usa .NET 8
+          dotnet-version: '8.0.x'
 
-      - name: 🔨 Compilar o Backend (C#) e gerar o .tar.gz
+      - name: 🔨 Compilar C# para ARM64 (VM Oracle)
         run: |
-          # 1. Cria a pasta que o Dockerfile está a pedir
           mkdir -p _output
           
-          # 2. Compila o backend C# no modo Release (Otimizado)
-          # Nota: Este é o caminho padrão do Kavita. Se o .csproj estiver noutro local, avise-me.
-          dotnet publish API/Kavita/Kavita.csproj -c Release -o ./temp_backend_build
+          # Entra na pasta API correta e compila para o processador da Oracle!
+          cd API
+          dotnet publish -c Release -r linux-arm64 --self-contained true -o ../temp_backend_build
+          cd ..
           
-          # 3. Zipa tudo num ficheiro .tar.gz dentro da pasta _output
+          # Zipa o resultado
           tar -czvf _output/kavita-backend.tar.gz -C ./temp_backend_build .
+
+      - name: 🐳 Configurar Emulador Multi-Arquitetura (QEMU)
+        uses: docker/setup-qemu-action@v3
+
+      - name: 🐳 Configurar Docker Buildx (Para empacotar em ARM)
+        uses: docker/setup-buildx-action@v3
 
       - name: 🐳 Login no GitHub Container Registry (GHCR)
         uses: docker/login-action@v3
@@ -51,9 +57,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📦 Construir e Publicar a Imagem Docker
+      - name: 📦 Construir e Publicar a Imagem Docker (ARM64)
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: linux/arm64
           push: true
           tags: ghcr.io/eufrauzino/kavita-pro:latest
