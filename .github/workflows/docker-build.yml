@@ -32,39 +32,43 @@ jobs:
         with:
           dotnet-version: '8.0.x' # Versão que o Kavita exige
 
-      - name: 🔨 Compilar C# para ARM64 (VM Oracle)
+      - name: 🔨 Compilar C# e Ajustar Nomes
         run: |
           mkdir -p _output
           
-          # Procura o arquivo C#, ignorando a pasta node_modules
           ARQUIVO_ALVO=$(find . -type f \( -name "Kavita.csproj" -o -name "API.csproj" \) | grep -v "node_modules" | head -n 1)
-          echo "🎯 Arquivo C# principal encontrado em: $ARQUIVO_ALVO"
           
-          # Compila o projeto e coloca tudo dentro da pasta Kavita
           dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./Kavita
           
-          # 🔥 A SOLUÇÃO DEFINITIVA: Limpa textos e procura pelo ficheiro PESADO!
           cd Kavita
-          # 1. Apaga ficheiros de texto indesejados para evitar confusão
           rm -f Copyright LICENSE README.md || true
           
-          # 2. Procura ficheiros sem extensão que tenham MAIS DE 5 MEGABYTES (O binário executável real)
-          MAIOR_EXECUTAVEL=$(find . -maxdepth 1 -type f ! -name "*.*" -size +5M | head -n 1)
-          
-          if [ ! -z "$MAIOR_EXECUTAVEL" ]; then
-            mv "$MAIOR_EXECUTAVEL" ./Kavita
-            echo "✅ Binário executável real renomeado com sucesso para Kavita!"
-          else
-            echo "⚠️ Nenhum ficheiro grande encontrado. A forçar renomeação direta..."
-            mv API Kavita || true
+          # Tentativa Explícita 1: O .NET gera o binário com o nome "API".
+          if [ -f "API" ]; then
+            mv API Kavita
           fi
           
-          # Dá permissão de execução
+          # Tentativa Explícita 2: Caso gere como "kavita" minúsculo.
+          if [ -f "kavita" ]; then
+            mv kavita Kavita
+          fi
+          
+          # Tentativa 3: Pega o maior arquivo sem extensão (Pulo do gato sem depender do comando find)
+          MAIOR=$(ls -S | grep -v '\.' | head -n 1)
+          if [ -n "$MAIOR" ] && [ "$MAIOR" != "Kavita" ]; then
+            mv "$MAIOR" Kavita
+          fi
+          
           chmod +x Kavita || true
           cd ..
           
-          # Zipa a pasta inteira com a estrutura exata que o Docker exige
+          # Zipa a pasta inteira
           tar -czvf _output/kavita-linux-arm64.tar.gz Kavita/
+
+      - name: 🐛 Espião no Dockerfile (Vacina)
+        run: |
+          # Se falhar novamente, o Docker vai imprimir todos os arquivos na tela para nós!
+          sed -i '/RUN chmod +x \/Kavita\/Kavita/i RUN ls -la \/Kavita || true' Dockerfile
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura (QEMU)
         uses: docker/setup-qemu-action@v3
