@@ -36,19 +36,23 @@ jobs:
         run: |
           mkdir -p _output
           
-          # Agora procuramos EXCLUSIVAMENTE pelo arquivo .csproj (Ignorando a .sln)
-          # Isso força o .NET a gerar o binário executável limpo, sem misturar projetos
-          ARQUIVO_ALVO=$(find . -type f -name "Kavita.csproj" | grep -v "node_modules" | head -n 1)
+          # Encontra o projeto (geralmente API.csproj)
+          ARQUIVO_ALVO=$(find . -type f \( -name "Kavita.csproj" -o -name "API.csproj" \) | grep -v "node_modules" | head -n 1)
           echo "🎯 Arquivo C# principal encontrado em: $ARQUIVO_ALVO"
           
-          # Compila apenas o projeto limpo para a arquitetura da Oracle
+          # Compila o projeto e joga na pasta Kavita
           dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./Kavita
           
-          # Confirmação de segurança: Dá permissão no executável antes mesmo de zipar
+          # .NET gera o arquivo como "API". Vamos renomeá-lo para "Kavita"!
+          if [ -f "./Kavita/API" ]; then mv ./Kavita/API ./Kavita/Kavita; fi
+          if [ -f "./Kavita/kavita" ]; then mv ./Kavita/kavita ./Kavita/Kavita; fi
+          
+          # Garante que o arquivo é executável
           chmod +x ./Kavita/Kavita || true
           
-          # Zipa a pasta inteira
+          # Zipa a pasta com a estrutura exata que o Docker exige
           tar -czvf _output/kavita-linux-arm64.tar.gz Kavita/
+
       - name: 🐳 Configurar Emulador Multi-Arquitetura (QEMU)
         uses: docker/setup-qemu-action@v3
 
