@@ -36,19 +36,31 @@ jobs:
         run: |
           mkdir -p _output
           
+          # Procura o arquivo C#, ignorando a pasta node_modules
           ARQUIVO_ALVO=$(find . -type f \( -name "Kavita.csproj" -o -name "API.csproj" \) | grep -v "node_modules" | head -n 1)
           echo "🎯 Arquivo C# principal encontrado em: $ARQUIVO_ALVO"
           
+          # Compila o projeto e coloca tudo dentro da pasta Kavita
           dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./Kavita
           
-          echo "🔎 RAIO-X: O que o .NET gerou dentro da pasta Kavita?"
-          ls -lah ./Kavita
+          # 🔥 O TIRO DE CANHÃO: Força bruta para encontrar e renomear o executável
+          cd Kavita
+          # Procura o ficheiro executável (sem extensão) dentro da pasta
+          MAIOR_EXECUTAVEL=$(find . -maxdepth 1 -type f ! -name "*.*" -executable | head -n 1)
           
-          # Tenta renomear as variações mais comuns
-          if [ -f "./Kavita/API" ]; then mv ./Kavita/API ./Kavita/Kavita; fi
-          if [ -f "./Kavita/kavita" ]; then mv ./Kavita/kavita ./Kavita/Kavita; fi
+          if [ ! -z "$MAIOR_EXECUTAVEL" ]; then
+            mv "$MAIOR_EXECUTAVEL" ./Kavita
+            echo "✅ Executável renomeado com sucesso para Kavita!"
+          else
+            echo "⚠️ Nenhum executável sem extensão encontrado. Tentando renomear API..."
+            mv API Kavita || true
+          fi
           
-          # Zipa a pasta inteira
+          # Garante que tem permissão de execução
+          chmod +x Kavita || true
+          cd ..
+          
+          # Zipa a pasta inteira com a estrutura exata que o Docker exige
           tar -czvf _output/kavita-linux-arm64.tar.gz Kavita/
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura (QEMU)
