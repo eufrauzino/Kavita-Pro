@@ -3,7 +3,7 @@ name: Kavita-Pro CI/CD
 on:
   push:
     branches:
-      - master # O robô acorda quando fazes push para a master
+      - master
 
 jobs:
   build-and-publish:
@@ -16,7 +16,7 @@ jobs:
       - name: 📥 Clonar o código-fonte
         uses: actions/checkout@v4
 
-      - name: 🟢 Preparar o Node.js (Para o Front-end)
+      - name: 🟢 Preparar o Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -27,10 +27,10 @@ jobs:
           npm install
           npm run build
 
-      - name: 🟣 Preparar o .NET Core (Para o Backend)
+      - name: 🟣 Preparar o .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x' # Versão que o Kavita exige
+          dotnet-version: '8.0.x'
 
       - name: 🔨 Compilar C# e Ajustar Nomes
         run: |
@@ -40,23 +40,18 @@ jobs:
           
           dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./Kavita
           
+          # 🔥 A CORREÇÃO DE MESTRE:
           cd Kavita
-          rm -f Copyright LICENSE README.md || true
           
-          # Tentativa Explícita 1: O .NET gera o binário com o nome "API".
+          # 1. ASSASSINA O IMPOSTOR: Apaga o debugger antes que ele cause problemas
+          rm -f createdump
+          
+          # 2. Renomeia o executável verdadeiro (API) para Kavita
           if [ -f "API" ]; then
             mv API Kavita
-          fi
-          
-          # Tentativa Explícita 2: Caso gere como "kavita" minúsculo.
-          if [ -f "kavita" ]; then
+            echo "✅ Executável API renomeado para Kavita!"
+          elif [ -f "kavita" ]; then
             mv kavita Kavita
-          fi
-          
-          # Tentativa 3: Pega o maior arquivo sem extensão (Pulo do gato sem depender do comando find)
-          MAIOR=$(ls -S | grep -v '\.' | head -n 1)
-          if [ -n "$MAIOR" ] && [ "$MAIOR" != "Kavita" ]; then
-            mv "$MAIOR" Kavita
           fi
           
           chmod +x Kavita || true
@@ -65,15 +60,10 @@ jobs:
           # Zipa a pasta inteira
           tar -czvf _output/kavita-linux-arm64.tar.gz Kavita/
 
-      - name: 🐛 Espião no Dockerfile (Vacina)
-        run: |
-          # Se falhar novamente, o Docker vai imprimir todos os arquivos na tela para nós!
-          sed -i '/RUN chmod +x \/Kavita\/Kavita/i RUN ls -la \/Kavita || true' Dockerfile
-
       - name: 🐳 Configurar Emulador Multi-Arquitetura (QEMU)
         uses: docker/setup-qemu-action@v3
 
-      - name: 🐳 Configurar Docker Buildx (Para empacotar em ARM)
+      - name: 🐳 Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: 🐳 Login no GitHub Container Registry (GHCR)
