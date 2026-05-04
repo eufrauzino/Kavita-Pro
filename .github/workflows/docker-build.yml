@@ -32,39 +32,49 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: 🔨 Compilar C# (Direto no Alvo)
+      - name: 🔨 Compilar C# (Kavita.Server)
         run: |
-          # 🎯 SEM ADIVINHAÇÕES: Apontamos diretamente para o projeto principal!
+          # 🎯 Localiza o projeto principal com precisão
           ARQUIVO_ALVO=$(find . -type f -name "Kavita.Server.csproj" | grep -v "Tests" | head -n 1)
+          if [ -z "$ARQUIVO_ALVO" ]; then ARQUIVO_ALVO=$(find . -type f -name "API.csproj" | head -n 1); fi
           
-          # Fallback de segurança para versões mais antigas
-          if [ -z "$ARQUIVO_ALVO" ]; then
-            ARQUIVO_ALVO=$(find . -type f -name "API.csproj" | grep -v "Tests" | head -n 1)
-          fi
-          
-          echo "🎯 O VERDADEIRO MOTOR FOI ENCONTRADO: $ARQUIVO_ALVO"
-          
-          # Publica apenas o projeto real no modo portátil (Gera o Kavita.Server.dll)
+          echo "🎯 Compilando o motor principal: $ARQUIVO_ALVO"
           dotnet publish "$ARQUIVO_ALVO" -c Release -o ./publish -p:UseAppHost=false
 
-      - name: 📝 Criar Dockerfile Industrial
+      - name: 📝 Criar Dockerfile de Produção (Versão Bunker)
         run: |
           cat <<'EOF' > Dockerfile.oracle
           FROM mcr.microsoft.com/dotnet/aspnet:10.0
           
-          # Instala dependências vitais do Kavita (SQLite e o renderizador de imagens libvips)
-          RUN apt-get update && apt-get install -y ca-certificates sqlite3 libicu-dev libvips tzdata && rm -rf /var/lib/apt/lists/*
+          # Dependências e criação de pastas
+          RUN apt-get update && apt-get install -y ca-certificates sqlite3 libicu-dev libvips42 tzdata && \
+              rm -rf /var/lib/apt/lists/* && \
+              mkdir -p /app/config /app/data /app/defaults
           
           WORKDIR /app
           
+          # Copia os arquivos compilados
           COPY ./publish/ ./
           COPY ./UI/Web/dist/browser/ ./wwwroot/
+          
+          # 🔥 BUNKER BLINDADO: Copia o appsettings ORIGINAL do repositório para /app/defaults/
+          # Volume da VM jamais monta em /app/defaults → este arquivo nunca some
+          COPY Kavita.Server/config/appsettings.json /app/defaults/appsettings.json
           
           EXPOSE 5000
           ENV ASPNETCORE_URLS=http://+:5000
           
-          # 🚀 SCRIPT SUPREMO: Pega a DLL principal (Kavita.Server) e dispara!
-          ENTRYPOINT ["/bin/sh", "-c", "DLL=$(ls *.runtimeconfig.json | head -n 1 | sed 's/\\.runtimeconfig\\.json/.dll/'); echo \"🚀 Bunker subindo com a DLL: $DLL\"; exec dotnet \"$DLL\""]
+          # 🚀 ENTRYPOINT INTELIGENTE (O SEGREDO DA VITÓRIA):
+          # Se a pasta /config estiver vazia por causa do volume da VM, ele copia o backup.
+          ENTRYPOINT ["/bin/sh", "-c", " \
+            if [ ! -f /app/config/appsettings.json ]; then \
+              echo '⚠️ Pasta config vazia! Restaurando appsettings.json padrão...'; \
+              cp /app/defaults/appsettings.json /app/config/appsettings.json; \
+            fi; \
+            DLL=$(ls Kavita.Server.dll 2>/dev/null || ls API.dll 2>/dev/null || ls *.runtimeconfig.json | head -n 1 | sed 's/\\.runtimeconfig\\.json/.dll/'); \
+            echo \"🚀 Bunker Kavita Online com DLL: $DLL\"; \
+            exec dotnet \"$DLL\" \
+          "]
           EOF
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura
@@ -80,7 +90,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📦 Construir e Publicar a Imagem Docker (ARM64)
+      - name: 📦 Construir e Publicar a Imagem (ARM64)
         uses: docker/build-push-action@v5
         with:
           context: .
