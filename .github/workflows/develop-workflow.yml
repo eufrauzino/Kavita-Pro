@@ -71,10 +71,41 @@ jobs:
       - name: Parse PR body
         id: parse-body
         run: |
+<<<<<<< HEAD
           body="${{ steps.findPr.outputs.body }}"
           if [[ ${#body} -gt 1870 ]] ; then
             body=${body:0:1870}
             body="${body}...and much more.
+=======
+          mkdir -p _output
+          
+          # Procura o arquivo C#, ignorando a pasta node_modules
+          ARQUIVO_ALVO=$(find . -type f \( -name "Kavita.csproj" -o -name "API.csproj" \) | grep -v "node_modules" | head -n 1)
+          echo "🎯 Arquivo C# principal encontrado em: $ARQUIVO_ALVO"
+          
+          # Compila o projeto e coloca tudo dentro da pasta Kavita
+          dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./Kavita
+          
+          # 🔥 O TIRO DE CANHÃO: Força bruta para encontrar e renomear o executável
+          cd Kavita
+          # Procura o ficheiro executável (sem extensão) dentro da pasta
+          MAIOR_EXECUTAVEL=$(find . -maxdepth 1 -type f ! -name "*.*" -executable | head -n 1)
+          
+          if [ ! -z "$MAIOR_EXECUTAVEL" ]; then
+            mv "$MAIOR_EXECUTAVEL" ./Kavita
+            echo "✅ Executável renomeado com sucesso para Kavita!"
+          else
+            echo "⚠️ Nenhum executável sem extensão encontrado. Tentando renomear API..."
+            mv API Kavita || true
+          fi
+          
+          # Garante que tem permissão de execução
+          chmod +x Kavita || true
+          cd ..
+          
+          # Zipa a pasta inteira com a estrutura exata que o Docker exige
+          tar -czvf _output/kavita-linux-arm64.tar.gz Kavita/
+>>>>>>> 92667290ecdbe11e74b45cf54978abdf857ae2cd
 
             Read full changelog: https://github.com/Kareadita/Kavita/pull/${{ steps.findPr.outputs.pr }}"
           fi
