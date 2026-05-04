@@ -32,39 +32,44 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: 🔨 Compilar C# (A Solução Definitiva - Single File)
+      - name: 🔨 Compilar C# (Sem Truques, Apenas Código Puro)
         run: |
-          mkdir -p _output
-          
-          # Encontra o projeto raiz
-          ARQUIVO_ALVO=$(find . -type f -name "*.csproj" | grep -v "node_modules" | grep -iE "Kavita.Server|API" | head -n 1)
+          # Encontra cirurgicamente o projeto real (ignorando a palavra Tests)
+          ARQUIVO_ALVO=$(find . -type f -name "*.csproj" | grep -iE "Kavita.Server.csproj|API.csproj" | grep -v "Tests" | head -n 1)
           echo "🎯 Compilando o projeto: $ARQUIVO_ALVO"
           
-          # 🔥 O XEQUE-MATE: Empacota tudo (AppHost, Runtime, DLLs) num ÚNICO ficheiro cego a nomes externos
-          dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./Kavita
+          # Publica os ficheiros soltos de forma padrão, na pasta "publish"
+          dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./publish
+
+      - name: 📝 Criar Dockerfile Customizado (Adeus Caixa Negra)
+        run: |
+          # Vamos gerar o nosso próprio Dockerfile on-the-fly, totalmente imune a erros de nome!
+          cat <<EOF > Dockerfile.oracle
+          FROM ubuntu:noble
           
-          cd Kavita
-          # Limpeza de segurança
-          rm -f createdump Copyright LICENSE README.md *.pdb || true
+          # Instala dependências base do Linux para o .NET e SQLite rodarem
+          RUN apt-get update && apt-get install -y ca-certificates libicu-dev libssl-dev tzdata sqlite3 && rm -rf /var/lib/apt/lists/*
           
-          # Agora temos apenas um grande ficheiro blindado. Podemos renomeá-lo à vontade!
-          if [ -f "Kavita.Server" ]; then
-            mv Kavita.Server Kavita
-          elif [ -f "API" ]; then
-            mv API Kavita
-          else
-            # Prevenção: Apanha o executável nativo seja qual for o nome que ele tenha gerado
-            MAIOR=$(find . -maxdepth 1 -type f -size +20M -executable | head -n 1)
-            if [ -n "$MAIOR" ]; then
-              mv "$MAIOR" ./Kavita
-            fi
-          fi
+          WORKDIR /app
           
-          chmod +x Kavita || true
-          cd ..
+          # Copia os binários originais intocados (seja Kavita.Server ou API)
+          COPY ./publish/ ./
           
-          # Zipa a pasta com a estrutura /Kavita/Kavita que o Docker exige
-          tar -czvf _output/kavita-linux-arm64.tar.gz Kavita/
+          # Copia o site (Angular) para onde o backend espera que ele esteja
+          COPY ./UI/Web/dist/browser/ ./wwwroot/
+          
+          # Garante permissão no que quer que a Microsoft tenha gerado
+          RUN chmod +x ./Kavita.Server || true
+          RUN chmod +x ./API || true
+          
+          EXPOSE 5000
+          ENV ASPNETCORE_URLS=http://+:5000
+          
+          # Script inteligente: Roda o que existir sem quebrar referências JSON
+          ENTRYPOINT ["sh", "-c", "if [ -f ./Kavita.Server ]; then ./Kavita.Server; else ./API; fi"]
+          EOF
+          
+          echo "✅ Dockerfile.oracle criado com sucesso!"
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura
         uses: docker/setup-qemu-action@v3
@@ -83,6 +88,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: Dockerfile.oracle # Ignora o original deles e usa o nosso!
           platforms: linux/arm64
           push: true
           tags: ghcr.io/eufrauzino/kavita-pro:latest
