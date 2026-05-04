@@ -1,0 +1,43 @@
+name: Kavita-Pro CI/CD
+
+on:
+  push:
+    branches:
+      - main # O robô só trabalha quando enviares código para a branch 'main'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # Necessário para guardar a imagem no GitHub
+
+    steps:
+      - name: 📥 Clonar o código-fonte
+        uses: actions/checkout@v4
+
+      - name: 🟢 Preparar o Node.js (Para o Front-end)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🏗️ Compilar o Front-end (Angular)
+        run: |
+          cd UI/Web
+          npm install
+          npm run build
+        # Este passo resolve o teu erro "dist/browser not found"!
+
+      - name: 🐳 Login no GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📦 Construir e Publicar a Imagem Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/eufrauzino/kavita-pro:latest
