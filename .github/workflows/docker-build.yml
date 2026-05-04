@@ -32,21 +32,33 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: 🔨 Compilar C# (O Raio-X de Arquiteto)
+      - name: 🔨 Compilar C# (Busca Milimétrica pelo Motor de Arranque)
         run: |
-          # 🔥 O TRUQUE DE GÊNIO: Procura pelo projeto que tem o "DNA" de servidor Web, ignorando os nomes mentirosos!
-          ARQUIVO_ALVO=$(grep -l -i "Microsoft.NET.Sdk.Web" $(find . -type f -name "*.csproj") | head -n 1)
-          echo "🎯 A VERDADEIRA IGNIÇÃO FOI ENCONTRADA EM: $ARQUIVO_ALVO"
+          # 🔍 Localiza o Program.cs que realmente inicia o servidor (builder.Build)
+          # Isso ignora bibliotecas e projetos de teste automaticamente.
+          CAMINHO_PROGRAM=$(find . -name "Program.cs" | xargs grep -l "builder.Build" | grep -v "Tests" | head -n 1)
           
-          # Compila exatamente esse arquivo
+          # Descobre qual .csproj é dono desse Program.cs
+          ARQUIVO_ALVO=$(find $(dirname "$CAMINHO_PROGRAM") -maxdepth 1 -name "*.csproj")
+          
+          echo "🎯 O VERDADEIRO PROJETO FOI ENCONTRADO: $ARQUIVO_ALVO"
+          
+          # Publica o projeto real no modo portátil
           dotnet publish "$ARQUIVO_ALVO" -c Release -o ./publish -p:UseAppHost=false -p:GenerateRuntimeConfigurationFiles=true
 
-      - name: 📝 Criar Dockerfile Oficial
+      - name: 📝 Criar Dockerfile Industrial
         run: |
           cat <<'EOF' > Dockerfile.oracle
           FROM mcr.microsoft.com/dotnet/aspnet:10.0
           
-          RUN apt-get update && apt-get install -y ca-certificates sqlite3 libicu-dev tzdata && rm -rf /var/lib/apt/lists/*
+          # Instala dependências essenciais (libvips é vital para o Kavita ler imagens)
+          RUN apt-get update && apt-get install -y \
+              ca-certificates \
+              sqlite3 \
+              libicu-dev \
+              libvips42 \
+              tzdata \
+              && rm -rf /var/lib/apt/lists/*
           
           WORKDIR /app
           
@@ -56,8 +68,8 @@ jobs:
           EXPOSE 5000
           ENV ASPNETCORE_URLS=http://+:5000
           
-          # 🚀 SCRIPT INTELIGENTE: Pega o arquivo que tem o "runtimeconfig", descobre a DLL principal e roda!
-          ENTRYPOINT ["/bin/sh", "-c", "DLL=$(ls *.runtimeconfig.json | head -n 1 | sed 's/\\.runtimeconfig\\.json/.dll/'); echo \"Iniciando motor na DLL: $DLL\"; exec dotnet \"./$DLL\""]
+          # 🚀 SCRIPT SUPREMO: Detecta qual DLL tem o arquivo de configuração e a executa
+          ENTRYPOINT ["/bin/sh", "-c", "DLL=$(ls *.runtimeconfig.json | head -n 1 | sed 's/\\.runtimeconfig\\.json/.dll/'); echo \"🚀 Bunker subindo com a DLL: $DLL\"; exec dotnet \"$DLL\""]
           EOF
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura
@@ -66,7 +78,7 @@ jobs:
       - name: 🐳 Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 🐳 Login no GitHub Container Registry
+      - name: 🐳 Login no GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
