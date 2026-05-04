@@ -32,44 +32,38 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: 🔨 Compilar C# (Sem Truques, Apenas Código Puro)
+      - name: 🔨 Compilar C#
         run: |
-          # Encontra cirurgicamente o projeto real (ignorando a palavra Tests)
-          ARQUIVO_ALVO=$(find . -type f -name "*.csproj" | grep -iE "Kavita.Server.csproj|API.csproj" | grep -v "Tests" | head -n 1)
+          # Encontra o projeto com o nome verdadeiro (Kavita.API)
+          ARQUIVO_ALVO=$(find . -type f -name "*.csproj" | grep -iE "Kavita.API.csproj|API.csproj" | grep -v "Tests" | head -n 1)
           echo "🎯 Compilando o projeto: $ARQUIVO_ALVO"
           
-          # Publica os ficheiros soltos de forma padrão, na pasta "publish"
+          # Publica tudo limpo na pasta "publish"
           dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./publish
 
-      - name: 📝 Criar Dockerfile Customizado (Adeus Caixa Negra)
+      - name: 📝 Criar Dockerfile Sniper (Kavita.API)
         run: |
-          # Vamos gerar o nosso próprio Dockerfile on-the-fly, totalmente imune a erros de nome!
           cat <<EOF > Dockerfile.oracle
           FROM ubuntu:noble
           
-          # Instala dependências base do Linux para o .NET e SQLite rodarem
+          # Dependências do sistema
           RUN apt-get update && apt-get install -y ca-certificates libicu-dev libssl-dev tzdata sqlite3 && rm -rf /var/lib/apt/lists/*
           
           WORKDIR /app
           
-          # Copia os binários originais intocados (seja Kavita.Server ou API)
           COPY ./publish/ ./
-          
-          # Copia o site (Angular) para onde o backend espera que ele esteja
           COPY ./UI/Web/dist/browser/ ./wwwroot/
           
-          # Garante permissão no que quer que a Microsoft tenha gerado
-          RUN chmod +x ./Kavita.Server || true
-          RUN chmod +x ./API || true
+          # 🔥 O ALVO EXATO: Dá permissão ao nome verdadeiro e define como inicialização!
+          RUN chmod +x ./Kavita.API || true
           
           EXPOSE 5000
           ENV ASPNETCORE_URLS=http://+:5000
           
-          # Script inteligente: Roda o que existir sem quebrar referências JSON
-          ENTRYPOINT ["sh", "-c", "if [ -f ./Kavita.Server ]; then ./Kavita.Server; else ./API; fi"]
+          ENTRYPOINT ["./Kavita.API"]
           EOF
           
-          echo "✅ Dockerfile.oracle criado com sucesso!"
+          echo "✅ Dockerfile.oracle criado apontando para Kavita.API!"
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura
         uses: docker/setup-qemu-action@v3
@@ -88,7 +82,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile.oracle # Ignora o original deles e usa o nosso!
+          file: Dockerfile.oracle
           platforms: linux/arm64
           push: true
           tags: ghcr.io/eufrauzino/kavita-pro:latest
