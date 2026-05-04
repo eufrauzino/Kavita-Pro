@@ -3,14 +3,14 @@ name: Kavita-Pro CI/CD
 on:
   push:
     branches:
-      - main # O robô só trabalha quando enviares código para a branch 'main'
+      - master 
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write # Necessário para guardar a imagem no GitHub
+      packages: write
 
     steps:
       - name: 📥 Clonar o código-fonte
@@ -26,7 +26,48 @@ jobs:
           cd UI/Web
           npm install
           npm run build
-        # Este passo resolve o teu erro "dist/browser not found"!
+
+      - name: 🟣 Preparar o .NET Core (Para o Backend)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x' # Versão que o Kavita exige
+
+      - name: 🔨 Compilar C# para ARM64 (VM Oracle)
+        run: |
+          mkdir -p _output
+          
+          # Procura o arquivo C#, ignorando a pasta node_modules
+          ARQUIVO_ALVO=$(find . -type f \( -name "Kavita.csproj" -o -name "API.csproj" \) | grep -v "node_modules" | head -n 1)
+          echo "🎯 Arquivo C# principal encontrado em: $ARQUIVO_ALVO"
+          
+          # Compila o projeto e coloca tudo dentro da pasta Kavita
+          dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./Kavita
+          
+          # 🔥 O TIRO DE CANHÃO: Força bruta para encontrar e renomear o executável
+          cd Kavita
+          # Procura o ficheiro executável (sem extensão) dentro da pasta
+          MAIOR_EXECUTAVEL=$(find . -maxdepth 1 -type f ! -name "*.*" -executable | head -n 1)
+          
+          if [ ! -z "$MAIOR_EXECUTAVEL" ]; then
+            mv "$MAIOR_EXECUTAVEL" ./Kavita
+            echo "✅ Executável renomeado com sucesso para Kavita!"
+          else
+            echo "⚠️ Nenhum executável sem extensão encontrado. Tentando renomear API..."
+            mv API Kavita || true
+          fi
+          
+          # Garante que tem permissão de execução
+          chmod +x Kavita || true
+          cd ..
+          
+          # Zipa a pasta inteira com a estrutura exata que o Docker exige
+          tar -czvf _output/kavita-linux-arm64.tar.gz Kavita/
+
+      - name: 🐳 Configurar Emulador Multi-Arquitetura (QEMU)
+        uses: docker/setup-qemu-action@v3
+
+      - name: 🐳 Configurar Docker Buildx (Para empacotar em ARM)
+        uses: docker/setup-buildx-action@v3
 
       - name: 🐳 Login no GitHub Container Registry (GHCR)
         uses: docker/login-action@v3
@@ -35,9 +76,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📦 Construir e Publicar a Imagem Docker
+      - name: 📦 Construir e Publicar a Imagem Docker (ARM64)
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: linux/arm64
           push: true
           tags: ghcr.io/eufrauzino/kavita-pro:latest
