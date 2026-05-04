@@ -27,24 +27,24 @@ jobs:
           npm install
           npm run build
 
-      - name: 🟣 Preparar o .NET Core
+      - name: 🟣 Preparar o .NET Core (ATUALIZADO PARA V10)
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
 
       - name: 🔨 Compilar C# (Modo Portátil e Oficial)
         run: |
           ARQUIVO_ALVO=$(find . -type f -name "*.csproj" | grep -iE "Kavita.API.csproj|API.csproj|Kavita.Server.csproj" | grep -v "Tests" | head -n 1)
           echo "🎯 Compilando o projeto: $ARQUIVO_ALVO"
           
-          # 🔥 O SEGREDO FINAL: Sem "-r linux-arm64". Código 100% portátil. 
-          # E forçamos a geração do runtimeconfig.json!
+          # Modo Universal
           dotnet publish "$ARQUIVO_ALVO" -c Release -o ./publish -p:UseAppHost=false -p:GenerateRuntimeConfigurationFiles=true
 
-      - name: 📝 Criar Dockerfile Oficial
+      - name: 📝 Criar Dockerfile Oficial (.NET 10)
         run: |
           cat <<'EOF' > Dockerfile.oracle
-          FROM mcr.microsoft.com/dotnet/aspnet:8.0
+          # 🔥 AGORA COM O MOTOR .NET 10 EXIGIDO PELO KAVITA!
+          FROM mcr.microsoft.com/dotnet/aspnet:10.0
           
           RUN apt-get update && apt-get install -y ca-certificates sqlite3 libicu-dev tzdata && rm -rf /var/lib/apt/lists/*
           
@@ -56,7 +56,6 @@ jobs:
           EXPOSE 5000
           ENV ASPNETCORE_URLS=http://+:5000
           
-          # Executa a DLL diretamente (O motor dotnet já está no Ubuntu base)
           ENTRYPOINT ["dotnet", "Kavita.API.dll"]
           EOF
 
