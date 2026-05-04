@@ -32,20 +32,22 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: 🔨 Compilar C# (Forçando a criação do Executável)
+      - name: 🔨 Compilar C# (Modo Oficial da Microsoft)
         run: |
           ARQUIVO_ALVO=$(find . -type f -name "*.csproj" | grep -iE "Kavita.API.csproj|API.csproj|Kavita.Server.csproj" | grep -v "Tests" | head -n 1)
           echo "🎯 Compilando o projeto: $ARQUIVO_ALVO"
           
-          # 🔥 O SEGREDO: '-p:UseAppHost=true' ignora a trava do desenvolvedor e FORÇA a criação do executável nativo!
-          dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -p:UseAppHost=true -o ./publish
+          # 🔥 Não tentamos mais criar um executável. Geramos apenas as DLLs puras para a arquitetura ARM64!
+          dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained false -o ./publish
 
-      - name: 📝 Criar Dockerfile Autônomo
+      - name: 📝 Criar Dockerfile com Motor .NET Nativo
         run: |
           cat <<'EOF' > Dockerfile.oracle
-          FROM ubuntu:noble
+          # Usa a imagem OFICIAL da Microsoft que já tem o motor 'dotnet' instalado
+          FROM mcr.microsoft.com/dotnet/aspnet:8.0
           
-          RUN apt-get update && apt-get install -y ca-certificates libicu-dev libssl-dev tzdata sqlite3 && rm -rf /var/lib/apt/lists/*
+          # Dependências do sistema
+          RUN apt-get update && apt-get install -y sqlite3 libicu-dev tzdata && rm -rf /var/lib/apt/lists/*
           
           WORKDIR /app
           
@@ -55,8 +57,8 @@ jobs:
           EXPOSE 5000
           ENV ASPNETCORE_URLS=http://+:5000
           
-          # 🤖 SCRIPT INTELIGENTE: Lê o arquivo deps.json, descobre o nome da aplicação sozinho, dá permissão e roda!
-          ENTRYPOINT ["/bin/sh", "-c", "NOME=$(ls *.deps.json | head -n 1 | sed 's/\\.deps\\.json//'); chmod +x \"./$NOME\"; exec \"./$NOME\""]
+          # 🚀 A CHAVE MESTRA: O motor 'dotnet' roda a DLL diretamente! Sem precisar de permissões ou executáveis!
+          ENTRYPOINT ["/bin/sh", "-c", "NOME=$(ls *.deps.json | head -n 1 | sed 's/\\.deps\\.json/.dll/'); exec dotnet \"./$NOME\""]
           EOF
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura
