@@ -32,13 +32,13 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: 🔨 Compilar C# (Apontando para a verdadeira ignição)
+      - name: 🔨 Compilar C# (O Raio-X de Arquiteto)
         run: |
-          # O verdadeiro "motor" da aplicação Kavita está na pasta /API e chama-se API.csproj
-          ARQUIVO_ALVO=$(find . -type f -name "API.csproj" | head -n 1)
-          echo "🎯 Compilando a VERDADEIRA ignição: $ARQUIVO_ALVO"
+          # 🔥 O TRUQUE DE GÊNIO: Procura pelo projeto que tem o "DNA" de servidor Web, ignorando os nomes mentirosos!
+          ARQUIVO_ALVO=$(grep -l -i "Microsoft.NET.Sdk.Web" $(find . -type f -name "*.csproj") | head -n 1)
+          echo "🎯 A VERDADEIRA IGNIÇÃO FOI ENCONTRADA EM: $ARQUIVO_ALVO"
           
-          # Publica a verdadeira aplicação no modo portátil (Gera o API.dll)
+          # Compila exatamente esse arquivo
           dotnet publish "$ARQUIVO_ALVO" -c Release -o ./publish -p:UseAppHost=false -p:GenerateRuntimeConfigurationFiles=true
 
       - name: 📝 Criar Dockerfile Oficial
@@ -56,8 +56,8 @@ jobs:
           EXPOSE 5000
           ENV ASPNETCORE_URLS=http://+:5000
           
-          # 🚀 Dispara a DLL correta!
-          ENTRYPOINT ["dotnet", "API.dll"]
+          # 🚀 SCRIPT INTELIGENTE: Pega o arquivo que tem o "runtimeconfig", descobre a DLL principal e roda!
+          ENTRYPOINT ["/bin/sh", "-c", "DLL=$(ls *.runtimeconfig.json | head -n 1 | sed 's/\\.runtimeconfig\\.json/.dll/'); echo \"Iniciando motor na DLL: $DLL\"; exec dotnet \"./$DLL\""]
           EOF
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura
