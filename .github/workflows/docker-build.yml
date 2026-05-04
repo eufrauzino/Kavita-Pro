@@ -27,23 +27,23 @@ jobs:
           npm install
           npm run build
 
-      - name: 🟣 Preparar o .NET Core (ATUALIZADO PARA V10)
+      - name: 🟣 Preparar o .NET Core 10
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
-      - name: 🔨 Compilar C# (Modo Portátil e Oficial)
+      - name: 🔨 Compilar C# (Apontando para a verdadeira ignição)
         run: |
-          ARQUIVO_ALVO=$(find . -type f -name "*.csproj" | grep -iE "Kavita.API.csproj|API.csproj|Kavita.Server.csproj" | grep -v "Tests" | head -n 1)
-          echo "🎯 Compilando o projeto: $ARQUIVO_ALVO"
+          # O verdadeiro "motor" da aplicação Kavita está na pasta /API e chama-se API.csproj
+          ARQUIVO_ALVO=$(find . -type f -name "API.csproj" | head -n 1)
+          echo "🎯 Compilando a VERDADEIRA ignição: $ARQUIVO_ALVO"
           
-          # Modo Universal
+          # Publica a verdadeira aplicação no modo portátil (Gera o API.dll)
           dotnet publish "$ARQUIVO_ALVO" -c Release -o ./publish -p:UseAppHost=false -p:GenerateRuntimeConfigurationFiles=true
 
-      - name: 📝 Criar Dockerfile Oficial (.NET 10)
+      - name: 📝 Criar Dockerfile Oficial
         run: |
           cat <<'EOF' > Dockerfile.oracle
-          # 🔥 AGORA COM O MOTOR .NET 10 EXIGIDO PELO KAVITA!
           FROM mcr.microsoft.com/dotnet/aspnet:10.0
           
           RUN apt-get update && apt-get install -y ca-certificates sqlite3 libicu-dev tzdata && rm -rf /var/lib/apt/lists/*
@@ -56,7 +56,8 @@ jobs:
           EXPOSE 5000
           ENV ASPNETCORE_URLS=http://+:5000
           
-          ENTRYPOINT ["dotnet", "Kavita.API.dll"]
+          # 🚀 Dispara a DLL correta!
+          ENTRYPOINT ["dotnet", "API.dll"]
           EOF
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura
