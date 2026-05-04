@@ -32,21 +32,19 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: 🔨 Compilar C#
+      - name: 🔨 Compilar C# (Forçando a criação do Executável)
         run: |
-          # Encontra o projeto com o nome verdadeiro (Kavita.API)
-          ARQUIVO_ALVO=$(find . -type f -name "*.csproj" | grep -iE "Kavita.API.csproj|API.csproj" | grep -v "Tests" | head -n 1)
+          ARQUIVO_ALVO=$(find . -type f -name "*.csproj" | grep -iE "Kavita.API.csproj|API.csproj|Kavita.Server.csproj" | grep -v "Tests" | head -n 1)
           echo "🎯 Compilando o projeto: $ARQUIVO_ALVO"
           
-          # Publica tudo limpo na pasta "publish"
-          dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./publish
+          # 🔥 O SEGREDO: '-p:UseAppHost=true' ignora a trava do desenvolvedor e FORÇA a criação do executável nativo!
+          dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -p:UseAppHost=true -o ./publish
 
-      - name: 📝 Criar Dockerfile Sniper (Kavita.API)
+      - name: 📝 Criar Dockerfile Autônomo
         run: |
-          cat <<EOF > Dockerfile.oracle
+          cat <<'EOF' > Dockerfile.oracle
           FROM ubuntu:noble
           
-          # Dependências do sistema
           RUN apt-get update && apt-get install -y ca-certificates libicu-dev libssl-dev tzdata sqlite3 && rm -rf /var/lib/apt/lists/*
           
           WORKDIR /app
@@ -54,16 +52,12 @@ jobs:
           COPY ./publish/ ./
           COPY ./UI/Web/dist/browser/ ./wwwroot/
           
-          # 🔥 O ALVO EXATO: Dá permissão ao nome verdadeiro e define como inicialização!
-          RUN chmod +x ./Kavita.API || true
-          
           EXPOSE 5000
           ENV ASPNETCORE_URLS=http://+:5000
           
-          ENTRYPOINT ["./Kavita.API"]
+          # 🤖 SCRIPT INTELIGENTE: Lê o arquivo deps.json, descobre o nome da aplicação sozinho, dá permissão e roda!
+          ENTRYPOINT ["/bin/sh", "-c", "NOME=$(ls *.deps.json | head -n 1 | sed 's/\\.deps\\.json//'); chmod +x \"./$NOME\"; exec \"./$NOME\""]
           EOF
-          
-          echo "✅ Dockerfile.oracle criado apontando para Kavita.API!"
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura
         uses: docker/setup-qemu-action@v3
