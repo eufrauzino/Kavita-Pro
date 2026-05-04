@@ -32,7 +32,7 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: 🔨 Compilar C# e Ajustar Nomes
+      - name: 🔨 Compilar C# e Ajustar Nomes da Família
         run: |
           mkdir -p _output
           
@@ -45,12 +45,19 @@ jobs:
           cd Kavita
           rm -f createdump Copyright LICENSE README.md || true
           
-          # 🔥 O XEQUE-MATE: Renomeia o executável exato!
+          # 🔥 O SEGREDO MÁXIMO: Renomeia o executável E toda a sua família (.dll e .json)
           if [ -f "Kavita.Server" ]; then
             mv Kavita.Server Kavita
-            echo "✅ Sucesso: Kavita.Server renomeado para Kavita!"
+            for ext in dll pdb deps.json runtimeconfig.json; do
+              if [ -f "Kavita.Server.$ext" ]; then mv "Kavita.Server.$ext" "Kavita.$ext"; fi
+            done
+            echo "✅ Família Kavita.Server renomeada com sucesso!"
           elif [ -f "API" ]; then
             mv API Kavita
+            for ext in dll pdb deps.json runtimeconfig.json; do
+              if [ -f "API.$ext" ]; then mv "API.$ext" "Kavita.$ext"; fi
+            done
+            echo "✅ Família API renomeada com sucesso!"
           fi
           
           chmod +x Kavita || true
