@@ -32,7 +32,7 @@ jobs:
         with:
           dotnet-version: '8.0.x' # Versão que o Kavita exige
 
-      - name: 🔨 Compilar C# para ARM64 (VM Oracle)
+      - name: 🔨 Compilar C# para ARM64 
         run: |
           mkdir -p _output
           
@@ -44,7 +44,7 @@ jobs:
           dotnet publish "$ARQUIVO_ALVO" -c Release -r linux-arm64 --self-contained true -o ./temp_backend_build
           
           # Zipa o resultado onde o Dockerfile original está à espera
-          tar -czvf _output/kavita-backend.tar.gz -C ./temp_backend_build .
+          tar -czvf _output/kavita-linux-arm64.tar.gz -C ./temp_backend_build .
 
       - name: 🐳 Configurar Emulador Multi-Arquitetura (QEMU)
         uses: docker/setup-qemu-action@v3
