@@ -1,0 +1,9 @@
+@let hasLicenseOnFile = licenseService.hasLicenseOnFile();
+
+@if (!hasLicenseOnFile && activeStep() === KavitaPlusRegistrationStep.Upsell) {
+  <app-kavita-plus-upsell (stepChanged)="activeStep.set($event)" />
+} @else if (activeStep() === KavitaPlusRegistrationStep.ConnectProviders) {
+  <app-kavita-plus-connect-providers (done)="activeStep.set(KavitaPlusRegistrationStep.Upsell)" />
+} @else {
+  <app-license-dashboard />
+}

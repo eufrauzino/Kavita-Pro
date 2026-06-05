@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Hangfire;
-using Kavita.API.Services.Helpers;
 using Kavita.Common.Helpers;
+using Kavita.Models.DTOs.KavitaPlus;
 using Kavita.Models.DTOs.Scrobbling;
 using Kavita.Models.Entities;
 using Kavita.Models.Entities.Enums;
@@ -96,8 +94,10 @@ public interface IScrobblingService
     Task CreateEventsFromExistingHistory(int userId = 0, CancellationToken ct = default);
     Task CreateEventsFromExistingHistoryForSeries(int seriesId, CancellationToken ct = default);
     Task ClearEventsForSeries(int userId, int seriesId, CancellationToken ct = default);
+    Task<bool> RetryScrobbleAsync(int authUserId, KavitaPlusAuditEntryDto auditEntry, CancellationToken ct = default);
 }
 
+// TODO: Figure out a place to put this that doesn't cause dependency hell
 public static class ScrobblingHelper
 {
     public const string AniListWeblinkWebsite = "https://anilist.co/manga/";
@@ -131,7 +131,7 @@ public static class ScrobblingHelper
     {
         if (series.MalId != 0) return series.MalId;
 
-        return WeblinkParser.GetMalId(series.Metadata.WebLinks) ?? series.ExternalSeriesMetadata?.MalId;
+        return ExternalIdParser.GetMalId(series.Metadata.WebLinks) ?? series.ExternalSeriesMetadata?.MalId;
     }
 
 
@@ -139,7 +139,7 @@ public static class ScrobblingHelper
     {
         if (seriesWithExternalMetadata.AniListId != 0) return seriesWithExternalMetadata.AniListId;
 
-        var aniListId = WeblinkParser.GetAniListId(seriesWithExternalMetadata.Metadata.WebLinks);
+        var aniListId = ExternalIdParser.GetAniListId(seriesWithExternalMetadata.Metadata.WebLinks);
         return aniListId ?? seriesWithExternalMetadata.ExternalSeriesMetadata?.AniListId;
     }
 
@@ -148,5 +148,4 @@ public static class ScrobblingHelper
     {
         return id is null or 0 ? string.Empty : $"{url}{id}/";
     }
-
 }

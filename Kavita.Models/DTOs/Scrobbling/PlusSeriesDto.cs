@@ -10,6 +10,8 @@ public class PlusSeriesRequestDto
     public long? MalId { get; set; }
     public string? GoogleBooksId { get; set; }
     public string? MangaDexId { get; set; }
+    public int? MangabakaId { get; set; }
+    public int? HardcoverId { get; set; }
     /// <summary>
     /// ComicBookRoundup Id
     /// </summary>

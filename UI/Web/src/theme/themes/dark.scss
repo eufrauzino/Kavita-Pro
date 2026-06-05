@@ -29,7 +29,7 @@
   --elevation-layer11-dark: rgba(0, 0, 0, 0.6);
 
   --elevation-layer0-dark-solid: #121212;
-  --elevation-layer1-dark-solid: #1D1D1D;
+  --elevation-layer1-dark-solid: #1D1D1D; // This is a good base for cards
   --elevation-layer2-dark-solid: #212121;
   --elevation-layer3-dark-solid: #242424;
   --elevation-layer4-dark-solid: #272727;
@@ -46,7 +46,7 @@
   --primary-color-darkest-shade: #25624A;
   --error-color: #BD362F;
   --error-accent-color: #ea0d02;
-  --warning-color: #FFECB5;
+  --warning-color: #dd9f50;
   --body-text-color: #efefef;
   --btn-icon-filter: invert(1) grayscale(100%) brightness(200%);
   --primary-color-scrollbar: rgba(255,255,255,0.3);
@@ -92,6 +92,13 @@
   --tile-color: var(--primary-color);
   --nav-offset: 3.75rem;
   --nav-mobile-offset: 3.4375rem;
+
+  /* Global Common Colors */
+  --success-color: #22c55e; // Success, Online, Connected
+
+  /** Override bs styles **/
+  --bs-success-rgb: 34, 197, 94;
+
 
   /* Should we render the series cover as background on mobile */
   --mobile-series-img-background: true;
@@ -180,6 +187,12 @@
   --btn-actions-border-radius: 0.375rem;
   --btn-actions-hover-bg: rgb(255 255 255 / 18%);
 
+  /* Discord (brand colors) */
+  --discord-bg-color: #5865F2;
+  --discord-text-color: #fff;
+  --discord-hover-bg-color: #4752C4;
+  --discord-active-bg-color: #3C45A5;
+
 
   /* Nav (Tabs) */
   --nav-item-min-width: 9.375rem;
@@ -207,7 +220,10 @@
   --nav-link-text-color: var(--elevation-layer10);
 
   /* Modal */
-  --modal-bg-color: #202122; // var(--bs-body-bg)
+  --modal-bg-color: #202122;
+  --modal-footer-bg-color: #292929;
+  --modal-footer-border-top-color: rgba(255, 255, 255, 0.05);
+  --modal-body-bg-color: var(--elevation-solid-1);
 
   /* Header */
   --nav-header-text-color: white;
@@ -508,4 +524,21 @@
   --activity-card-client-platform-badge-bg-color: #8b5cf6;
   --activity-card-client-device-badge-bg-color: #3b82f6;
 
+  /** KavitaPlus Audit Log **/
+  --audit-log-metadata-color: #4AC694;
+  --audit-log-scrobble-color: #FAC858;
+  --audit-log-match-color: #5470C6; // Maybe #a5bbff is a better color (color contrast)
+  --audit-log-sync-color: #73C0DE;
+
+  /** Match confidence chip */
+  --match-confidence-chip-strong-color: var(--primary-color);
+  --match-confidence-chip-likely-color: #7ec99e;
+  --match-confidence-chip-weak-color: var(--warning-color);
+  --match-confidence-chip-doubt-color: var(--error-color);
+
+  /** Media format pill */
+  --media-format-pill-manga-color: var(--primary-color);
+  --media-format-pill-light-novel-color: #a5bbff;
+  --media-format-pill-comic-color: #fc8452;
+  --media-format-pill-book-color: #fac858;
 }

@@ -2,12 +2,12 @@
   "openapi": "3.0.4",
   "info": {
     "title": "Kavita",
-    "description": "Kavita provides a set of APIs authenticated via an Auth Key passed in the `x-api-key` header. Generate an Auth Key under User Settings → Manage Auth Keys, paste it into the Authorize panel, and all Try It requests will include it. Assume all fields of a payload are required unless marked optional. Built against v0.9.0.0",
+    "description": "Kavita provides a set of APIs authenticated via an Auth Key passed in the `x-api-key` header. Generate an Auth Key under User Settings → Manage Auth Keys, paste it into the Authorize panel, and all Try It requests will include it. Assume all fields of a payload are required unless marked optional. Built against v0.9.0.5",
     "license": {
       "name": "GPL-3.0",
       "url": "https://github.com/Kareadita/Kavita/blob/develop/LICENSE"
     },
-    "version": "0.9.0.0"
+    "version": "0.9.0.5"
   },
   "servers": [
     {
@@ -5461,6 +5461,389 @@
         }
       }
     },
+    "/api/Image/external/series": {
+      "get": {
+        "tags": [
+          "Image"
+        ],
+        "parameters": [
+          {
+            "name": "seriesId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalCoverResponseDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalCoverResponseDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalCoverResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Image/external/volume": {
+      "get": {
+        "tags": [
+          "Image"
+        ],
+        "parameters": [
+          {
+            "name": "seriesId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "volumeId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalCoverResponseDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalCoverResponseDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalCoverResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Image/external/chapter": {
+      "get": {
+        "tags": [
+          "Image"
+        ],
+        "parameters": [
+          {
+            "name": "seriesId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "chapterId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalCoverResponseDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalCoverResponseDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalCoverResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kavita-plus-audit/entries": {
+      "post": {
+        "tags": [
+          "KavitaPlusAudit"
+        ],
+        "summary": "Returns a paged, filtered list of all Kavita+ audit events. Admin only.",
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KavitaPlusAuditFilterDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KavitaPlusAuditFilterDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/KavitaPlusAuditFilterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KavitaPlusAuditEntryDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KavitaPlusAuditEntryDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KavitaPlusAuditEntryDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kavita-plus-audit/entries/series/{seriesId}": {
+      "get": {
+        "tags": [
+          "KavitaPlusAudit"
+        ],
+        "summary": "Returns Kavita+ audit info scoped to a single series, for the popover.\nScrobble events are filtered to the calling user unless they are an admin.",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/KavitaPlusAuditSeriesInfoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KavitaPlusAuditSeriesInfoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KavitaPlusAuditSeriesInfoDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kavita-plus-audit/stats": {
+      "get": {
+        "tags": [
+          "KavitaPlusAudit"
+        ],
+        "summary": "Returns aggregate stats for the admin audit feed header strip.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/KavitaPlusAuditStatsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KavitaPlusAuditStatsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KavitaPlusAuditStatsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kavita-plus-audit/my-activity": {
+      "post": {
+        "tags": [
+          "KavitaPlusAudit"
+        ],
+        "summary": "Returns the calling user's own Kavita+ activity, paged and filtered.",
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KavitaPlusAuditFilterDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KavitaPlusAuditFilterDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/KavitaPlusAuditFilterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KavitaPlusAuditEntryDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KavitaPlusAuditEntryDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KavitaPlusAuditEntryDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Koreader/{apiKey}/users/auth": {
       "get": {
         "tags": [
@@ -6546,7 +6929,7 @@
           "License"
         ],
         "summary": "Updates server license",
-        "description": "Caches the result",
+        "description": "Caches the result when successful",
         "requestBody": {
           "content": {
             "application/json": {
@@ -6568,7 +6951,24 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/KavitaPlusRegisterResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KavitaPlusRegisterResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KavitaPlusRegisterResultDto"
+                }
+              }
+            }
           }
         }
       }
@@ -6629,6 +7029,86 @@
               "text/json": {
                 "schema": {
                   "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/License/provider-health": {
+      "get": {
+        "tags": [
+          "License"
+        ],
+        "summary": "Provides a 15 min snapshot of Kavita+ Providers (Hardcover, AniList, MangaBaka, etc.) API health.\nKavita caches every 45 mins.",
+        "parameters": [
+          {
+            "name": "forceCheck",
+            "in": "query",
+            "description": "Bypass cache and force a reload from Kavita+ server",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KavitaPlusProviderHealthSnapshotDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KavitaPlusProviderHealthSnapshotDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KavitaPlusProviderHealthSnapshotDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/License/stats": {
+      "get": {
+        "tags": [
+          "License"
+        ],
+        "summary": "Providers how many interactions this license has had with Kavita+ over a lifetime",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/KavitaPlusLicenseUsageDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KavitaPlusLicenseUsageDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KavitaPlusLicenseUsageDto"
                 }
               }
             }
@@ -9164,6 +9644,7 @@
           "Rating"
         ],
         "summary": "Overall rating from all Kavita users for a given Series",
+        "description": "If the authenticated user is the only user to have rated the series, returns 0",
         "parameters": [
           {
             "name": "seriesId",
@@ -9205,6 +9686,7 @@
           "Rating"
         ],
         "summary": "Overall rating from all Kavita users for a given Chapter",
+        "description": "If the authenticated user is the only user to have rated the chapter, returns 0",
         "parameters": [
           {
             "name": "chapterId",
@@ -13577,7 +14059,7 @@
         "tags": [
           "Scrobbling"
         ],
-        "summary": "Has the logged in user ran scrobble generation",
+        "summary": "Has the logged-in user ran scrobble generation",
         "responses": {
           "200": {
             "description": "OK",
@@ -13643,6 +14125,56 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Scrobbling/retry-scrobble": {
+      "post": {
+        "tags": [
+          "Scrobbling"
+        ],
+        "summary": "Attempts to retry Scrobble Events for the current authenticated user (or admin-allowed).",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KavitaPlusAuditEntryDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KavitaPlusAuditEntryDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/KavitaPlusAuditEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
           }
         }
       }
@@ -15266,35 +15798,28 @@
               "type": "integer",
               "format": "int32"
             }
-          },
-          {
-            "name": "aniListId",
-            "in": "query",
-            "description": "",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "malId",
-            "in": "query",
-            "description": "",
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          },
-          {
-            "name": "cbrId",
-            "in": "query",
-            "description": "",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
           }
         ],
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalMetadataIdsDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalMetadataIdsDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalMetadataIdsDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -19380,6 +19905,57 @@
         }
       }
     },
+    "/api/Upload/upload-by-file": {
+      "post": {
+        "tags": [
+          "Upload"
+        ],
+        "summary": "Stages an uploaded image file in the temp directory for use in a cover image replacement flow.\nThis is automatically cleaned up.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "description": "The image file to stage",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "file": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Upload/series": {
       "post": {
         "tags": [
@@ -20789,6 +21365,30 @@
         },
         "additionalProperties": false
       },
+      "ApiUsageDto": {
+        "type": "object",
+        "properties": {
+          "apiName": {
+            "$ref": "#/components/schemas/KavitaPlusApiName"
+          },
+          "lifetimeCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "last30DaysCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dailyBuckets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyBucketDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "AppUserCollectionDto": {
         "type": "object",
         "properties": {
@@ -20898,6 +21498,78 @@
           }
         },
         "additionalProperties": false
+      },
+      "AuditLogMatchExternalIdsParamsDto": {
+        "type": "object",
+        "properties": {
+          "aniListId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "malId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "mangaBakaId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hardcoverId": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AuditStatus": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — Success\n- `1` — Failure\n- `2` — Info",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Success",
+          "Failure",
+          "Info"
+        ],
+        "x-enum-descriptions": [
+          "Success",
+          "Failure",
+          "Info"
+        ]
+      },
+      "AuditSubjectType": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — Series\n- `1` — Person\n- `2` — Collection\n- `3` — Chapter\n- `4` — Global",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Series",
+          "Person",
+          "Collection",
+          "Chapter",
+          "Global"
+        ],
+        "x-enum-descriptions": [
+          "Series",
+          "Person",
+          "Collection",
+          "Chapter",
+          "Global"
+        ]
       },
       "AuthKeyDto": {
         "required": [
@@ -22338,6 +23010,10 @@
           "mangaBakaId": {
             "type": "integer",
             "format": "int64"
+          },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -22916,6 +23592,20 @@
         },
         "additionalProperties": false
       },
+      "DailyBucketDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
       "DashboardStreamDto": {
         "required": [
           "name"
@@ -23414,6 +24104,111 @@
         },
         "additionalProperties": false
       },
+      "ExternalCoverImageType": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — Series\n- `1` — Volume\n- `2` — VolumeBack\n- `3` — Chapter\n- `4` — Issue\n- `5` — Banner\n- `6` — Season\n- `7` — Audiobook\n- `8` — Other",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Series",
+          "Volume",
+          "VolumeBack",
+          "Chapter",
+          "Issue",
+          "Banner",
+          "Season",
+          "Audiobook",
+          "Other"
+        ],
+        "x-enum-descriptions": [
+          "Series",
+          "Volume",
+          "VolumeBack",
+          "Chapter",
+          "Issue",
+          "Banner",
+          "Season",
+          "Audiobook",
+          "Other"
+        ]
+      },
+      "ExternalCoverResponseDto": {
+        "required": [
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "$ref": "#/components/schemas/ExternalCoverImageType"
+          },
+          "number": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExternalMetadataIdsDto": {
+        "type": "object",
+        "properties": {
+          "malId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "aniListId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "mangabakaId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "hardcoverId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "seriesName": {
+            "type": "string",
+            "nullable": true
+          },
+          "localizedSeriesName": {
+            "type": "string",
+            "nullable": true
+          },
+          "plusMediaFormat": {
+            "$ref": "#/components/schemas/PlusMediaFormat"
+          }
+        },
+        "additionalProperties": false
+      },
       "ExternalSeriesDetailDto": {
         "type": "object",
         "properties": {
@@ -23432,6 +24227,16 @@
             "nullable": true
           },
           "cbrId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "hardcoverId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "mangabakaId": {
             "type": "integer",
             "format": "int32",
             "nullable": true
@@ -24253,6 +25058,686 @@
         },
         "additionalProperties": false
       },
+      "KavitaPlusApiName": {
+        "enum": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "type": "integer",
+        "description": "Members:\n- `1` — CoverRequests\n- `2` — MetadataSync\n- `3` — SeriesMatched\n- `4` — Scrobbles\n- `5` — MalStackImport\n- `6` — WantToRead\n- `7` — Recommendations\n- `8` — Reviews",
+        "format": "int32",
+        "x-enum-varnames": [
+          "CoverRequests",
+          "MetadataSync",
+          "SeriesMatched",
+          "Scrobbles",
+          "MalStackImport",
+          "WantToRead",
+          "Recommendations",
+          "Reviews"
+        ],
+        "x-enum-descriptions": [
+          "CoverRequests",
+          "MetadataSync",
+          "SeriesMatched",
+          "Scrobbles",
+          "MalStackImport",
+          "WantToRead",
+          "Recommendations",
+          "Reviews"
+        ]
+      },
+      "KavitaPlusAuditCategory": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — Match\n- `1` — Metadata\n- `2` — Scrobble\n- `3` — Sync",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Match",
+          "Metadata",
+          "Scrobble",
+          "Sync"
+        ],
+        "x-enum-descriptions": [
+          "Match",
+          "Metadata",
+          "Scrobble",
+          "Sync"
+        ]
+      },
+      "KavitaPlusAuditEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "category": {
+            "$ref": "#/components/schemas/KavitaPlusAuditCategory"
+          },
+          "eventType": {
+            "$ref": "#/components/schemas/KavitaPlusEventType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AuditStatus"
+          },
+          "seriesId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "libraryId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "seriesName": {
+            "type": "string",
+            "nullable": true
+          },
+          "subjectType": {
+            "$ref": "#/components/schemas/AuditSubjectType"
+          },
+          "subjectId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "diff": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetadataFieldChangeDto"
+            },
+            "nullable": true
+          },
+          "errorMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "scrobbleDetails": {
+            "$ref": "#/components/schemas/KavitaPlusScrobbleDetailsDto"
+          },
+          "matchDetails": {
+            "$ref": "#/components/schemas/KavitaPlusAuditMatchDetailsDto"
+          },
+          "syncDetails": {
+            "$ref": "#/components/schemas/KavitaPlusAuditSyncDetailsDto"
+          },
+          "metadataExtras": {
+            "$ref": "#/components/schemas/KavitaPlusAuditMetadataExtrasDto"
+          },
+          "canRetry": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusAuditFilterDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/KavitaPlusAuditCategory"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AuditStatus"
+          },
+          "subjectType": {
+            "$ref": "#/components/schemas/AuditSubjectType"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "seriesId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "fromUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "toUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "search": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusAuditMatchDetailsDto": {
+        "type": "object",
+        "properties": {
+          "matchedName": {
+            "type": "string",
+            "nullable": true
+          },
+          "before": {
+            "$ref": "#/components/schemas/AuditLogMatchExternalIdsParamsDto"
+          },
+          "after": {
+            "$ref": "#/components/schemas/AuditLogMatchExternalIdsParamsDto"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "dontMatch": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusAuditMetadataExtrasDto": {
+        "type": "object",
+        "properties": {
+          "coverUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "issueNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "personName": {
+            "type": "string",
+            "nullable": true
+          },
+          "aliasAdded": {
+            "type": "string",
+            "nullable": true
+          },
+          "fetchTrigger": {
+            "$ref": "#/components/schemas/MetadataFetchTrigger"
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusAuditSeriesInfoDto": {
+        "type": "object",
+        "properties": {
+          "seriesId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "libraryId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "seriesName": {
+            "type": "string",
+            "nullable": true
+          },
+          "isMatched": {
+            "type": "boolean"
+          },
+          "aniListId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "malId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "hardcoverId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "metronId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "comicVineId": {
+            "type": "string",
+            "nullable": true
+          },
+          "mangaBakaId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "nextRefreshUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastRefreshedUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "recentEvents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KavitaPlusAuditEntryDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusAuditStatsDto": {
+        "type": "object",
+        "properties": {
+          "events24H": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failures24H": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unresolvedMatchFailures": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "matchedSeriesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalEligibleSeriesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "staleMatchesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "blacklistedSeriesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scrobbleQueueCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusAuditSyncDetailsDto": {
+        "type": "object",
+        "properties": {
+          "collectionName": {
+            "type": "string",
+            "nullable": true
+          },
+          "stackId": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "missingCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "seriesName": {
+            "type": "string",
+            "nullable": true
+          },
+          "seriesId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "hasMal": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "hasAniList": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "seriesMatched": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusBillingInterval": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — Day\n- `1` — Week\n- `2` — Month\n- `3` — Year",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Day",
+          "Week",
+          "Month",
+          "Year"
+        ],
+        "x-enum-descriptions": [
+          "Day",
+          "Week",
+          "Month",
+          "Year"
+        ]
+      },
+      "KavitaPlusEventType": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          10,
+          11,
+          13,
+          20,
+          21,
+          30,
+          31,
+          40,
+          41,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          60,
+          61,
+          62
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — SeriesMatched\n- `1` — SeriesMatchFailed\n- `2` — SeriesBlacklisted\n- `3` — SeriesMatchFixed\n- `4` — SeriesDontMatchSet\n- `10` — MetadataFetched\n- `11` — MetadataUpdated\n- `13` — CoverUpdated\n- `20` — ChapterMetadataUpdated\n- `21` — ChapterCoverUpdated\n- `30` — PersonCoverUpdated\n- `31` — PersonAliasAdded\n- `40` — CollectionSynced\n- `41` — CollectionItemAdded\n- `50` — ScrobbleEventCreated\n- `51` — ScrobbleEventUpdated\n- `52` — ScrobbleEventSent\n- `53` — ScrobbleEventFailed\n- `54` — ScrobbleRateLimitHit\n- `55` — ScrobbleEventSkipped\n- `56` — ScrobbleHoldRemoved\n- `57` — ScrobbleHoldAdded\n- `60` — SyncStarted\n- `61` — SyncCompleted\n- `62` — SyncFailed",
+        "format": "int32",
+        "x-enum-varnames": [
+          "SeriesMatched",
+          "SeriesMatchFailed",
+          "SeriesBlacklisted",
+          "SeriesMatchFixed",
+          "SeriesDontMatchSet",
+          "MetadataFetched",
+          "MetadataUpdated",
+          "CoverUpdated",
+          "ChapterMetadataUpdated",
+          "ChapterCoverUpdated",
+          "PersonCoverUpdated",
+          "PersonAliasAdded",
+          "CollectionSynced",
+          "CollectionItemAdded",
+          "ScrobbleEventCreated",
+          "ScrobbleEventUpdated",
+          "ScrobbleEventSent",
+          "ScrobbleEventFailed",
+          "ScrobbleRateLimitHit",
+          "ScrobbleEventSkipped",
+          "ScrobbleHoldRemoved",
+          "ScrobbleHoldAdded",
+          "SyncStarted",
+          "SyncCompleted",
+          "SyncFailed"
+        ],
+        "x-enum-descriptions": [
+          "SeriesMatched",
+          "SeriesMatchFailed",
+          "SeriesBlacklisted",
+          "SeriesMatchFixed",
+          "SeriesDontMatchSet",
+          "MetadataFetched",
+          "MetadataUpdated",
+          "CoverUpdated",
+          "ChapterMetadataUpdated",
+          "ChapterCoverUpdated",
+          "PersonCoverUpdated",
+          "PersonAliasAdded",
+          "CollectionSynced",
+          "CollectionItemAdded",
+          "ScrobbleEventCreated",
+          "ScrobbleEventUpdated",
+          "ScrobbleEventSent",
+          "ScrobbleEventFailed",
+          "ScrobbleRateLimitHit",
+          "ScrobbleEventSkipped",
+          "ScrobbleHoldRemoved",
+          "ScrobbleHoldAdded",
+          "SyncStarted",
+          "SyncCompleted",
+          "SyncFailed"
+        ]
+      },
+      "KavitaPlusLicenseUsageDto": {
+        "type": "object",
+        "properties": {
+          "generatedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiUsageDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusProviderHealthIncidentType": {
+        "enum": [
+          1,
+          2
+        ],
+        "type": "integer",
+        "description": "Members:\n- `1` — Degraded\n- `2` — Down",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Degraded",
+          "Down"
+        ],
+        "x-enum-descriptions": [
+          "Degraded",
+          "Down"
+        ]
+      },
+      "KavitaPlusProviderHealthSnapshotDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/ScrobbleProvider"
+          },
+          "avgLatencyMs": {
+            "type": "number",
+            "format": "double"
+          },
+          "status": {
+            "$ref": "#/components/schemas/KavitaPlusProviderHealthStatus"
+          },
+          "lastIncident": {
+            "$ref": "#/components/schemas/KavitaPlusProviderIncidentDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusProviderHealthStatus": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — Unknown\n- `1` — Operational\n- `2` — Degraded\n- `3` — Down",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Unknown",
+          "Operational",
+          "Degraded",
+          "Down"
+        ],
+        "x-enum-descriptions": [
+          "Unknown",
+          "Operational",
+          "Degraded",
+          "Down"
+        ]
+      },
+      "KavitaPlusProviderIncidentDto": {
+        "type": "object",
+        "properties": {
+          "startedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "type": {
+            "$ref": "#/components/schemas/KavitaPlusProviderHealthIncidentType"
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusRegisterResultDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "isSubscriptionActive": {
+            "type": "boolean"
+          },
+          "errorCode": {
+            "$ref": "#/components/schemas/KavitaPlusRegistrationErrorCode"
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusRegistrationErrorCode": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — None\n- `1` — Registration Failed (RegistrationFailed)\n- `2` — Already Registered (AlreadyRegistered)\n- `3` — Subscription Inactive (SubscriptionInactive)\n- `4` — Internal Error (InternalError)",
+        "format": "int32",
+        "x-enum-varnames": [
+          "None",
+          "RegistrationFailed",
+          "AlreadyRegistered",
+          "SubscriptionInactive",
+          "InternalError"
+        ],
+        "x-enum-descriptions": [
+          "None",
+          "Registration Failed",
+          "Already Registered",
+          "Subscription Inactive",
+          "Internal Error"
+        ]
+      },
+      "KavitaPlusScrobbleDetailsDto": {
+        "type": "object",
+        "properties": {
+          "scrobbleEventType": {
+            "$ref": "#/components/schemas/ScrobbleEventType"
+          },
+          "chapterNumber": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "volumeNumber": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "rating": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
+          "provider": {
+            "$ref": "#/components/schemas/ScrobbleProvider"
+          },
+          "libraryType": {
+            "$ref": "#/components/schemas/LibraryType"
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusSubscriptionState": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — Active\n- `1` — Cancelled\n- `2` — Paused",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Active",
+          "Cancelled",
+          "Paused"
+        ],
+        "x-enum-descriptions": [
+          "Active",
+          "Cancelled",
+          "Paused"
+        ]
+      },
       "KeyBind": {
         "required": [
           "key"
@@ -24498,14 +25983,48 @@
       "LicenseInfoDto": {
         "type": "object",
         "properties": {
+          "state": {
+            "$ref": "#/components/schemas/KavitaPlusSubscriptionState"
+          },
+          "isActive": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "isCancelled": {
+            "type": "boolean",
+            "readOnly": true
+          },
           "expirationDate": {
             "type": "string",
             "format": "date-time"
           },
-          "isActive": {
-            "type": "boolean"
+          "nextChargeDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           },
-          "isCancelled": {
+          "subscribedSince": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "productName": {
+            "type": "string",
+            "nullable": true
+          },
+          "priceAmount": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "priceCurrency": {
+            "type": "string",
+            "nullable": true
+          },
+          "billingInterval": {
+            "$ref": "#/components/schemas/KavitaPlusBillingInterval"
+          },
+          "hasActiveDiscount": {
             "type": "boolean"
           },
           "isValidVersion": {
@@ -24525,6 +26044,14 @@
           "installId": {
             "type": "string",
             "nullable": true
+          },
+          "discordId": {
+            "type": "string",
+            "nullable": true
+          },
+          "hasDiscordSet": {
+            "type": "boolean",
+            "readOnly": true
           }
         },
         "additionalProperties": false
@@ -24812,9 +26339,6 @@
       "MatchSeriesDto": {
         "type": "object",
         "properties": {
-          "dontMatch": {
-            "type": "boolean"
-          },
           "seriesId": {
             "type": "integer",
             "format": "int32"
@@ -24964,6 +26488,100 @@
           }
         },
         "additionalProperties": false
+      },
+      "MetadataFetchTrigger": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — Unknown\n- `1` — Series Added (SeriesAdded)\n- `2` — On Demand (OnDemand)\n- `3` — Manual Match (ManualMatch)\n- `4` — Scheduled Refresh (ScheduledRefresh)",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Unknown",
+          "SeriesAdded",
+          "OnDemand",
+          "ManualMatch",
+          "ScheduledRefresh"
+        ],
+        "x-enum-descriptions": [
+          "Unknown",
+          "Series Added",
+          "On Demand",
+          "Manual Match",
+          "Scheduled Refresh"
+        ]
+      },
+      "MetadataFieldChangeDto": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "$ref": "#/components/schemas/MetadataFieldChangeKind"
+          },
+          "from": {
+            "nullable": true
+          },
+          "to": {
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MetadataFieldChangeKind": {
+        "enum": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "type": "integer",
+        "description": "Members:\n- `1` — Relationships\n- `2` — Characters\n- `3` — Artists\n- `4` — Writers\n- `5` — Tags\n- `6` — Genres\n- `7` — PublicationStatus\n- `8` — AgeRating\n- `9` — ExternalIds\n- `10` — Summary\n- `11` — Title\n- `12` — ReleaseDate\n- `13` — ReleaseYear\n- `14` — LocalizedName",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Relationships",
+          "Characters",
+          "Artists",
+          "Writers",
+          "Tags",
+          "Genres",
+          "PublicationStatus",
+          "AgeRating",
+          "ExternalIds",
+          "Summary",
+          "Title",
+          "ReleaseDate",
+          "ReleaseYear",
+          "LocalizedName"
+        ],
+        "x-enum-descriptions": [
+          "Relationships",
+          "Characters",
+          "Artists",
+          "Writers",
+          "Tags",
+          "Genres",
+          "PublicationStatus",
+          "AgeRating",
+          "ExternalIds",
+          "Summary",
+          "Title",
+          "ReleaseDate",
+          "ReleaseYear",
+          "LocalizedName"
+        ]
       },
       "MetadataFieldMappingDto": {
         "type": "object",
@@ -27617,24 +29235,27 @@
           1,
           2,
           4,
-          5
+          5,
+          6
         ],
         "type": "integer",
-        "description": "Members:\n- `0` — Kavita\n- `1` — AniList\n- `2` — Mal\n- `4` — Cbr\n- `5` — Hardcover",
+        "description": "Members:\n- `0` — Kavita\n- `1` — AniList\n- `2` — Mal\n- `4` — Cbr\n- `5` — Hardcover\n- `6` — MangaBaka",
         "format": "int32",
         "x-enum-varnames": [
           "Kavita",
           "AniList",
           "Mal",
           "Cbr",
-          "Hardcover"
+          "Hardcover",
+          "MangaBaka"
         ],
         "x-enum-descriptions": [
           "Kavita",
           "AniList",
           "Mal",
           "Cbr",
-          "Hardcover"
+          "Hardcover",
+          "MangaBaka"
         ]
       },
       "SearchResultDto": {
@@ -28059,6 +29680,10 @@
           "mangaBakaId": {
             "type": "integer",
             "format": "int64"
+          },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -29341,6 +30966,10 @@
             "type": "integer",
             "format": "int64"
           },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32"
+          },
           "seriesId": {
             "type": "integer",
             "format": "int32"
@@ -29765,6 +31394,10 @@
             "type": "integer",
             "format": "int64"
           },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32"
+          },
           "number": {
             "type": "string",
             "nullable": true
@@ -30111,6 +31744,11 @@
           "mangaBakaId": {
             "type": "integer",
             "format": "int64",
+            "nullable": true
+          },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         },
@@ -30875,6 +32513,11 @@
             "type": "integer",
             "format": "int64",
             "nullable": true
+          },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -31036,6 +32679,11 @@
             "type": "integer",
             "format": "int64",
             "nullable": true
+          },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -31056,8 +32704,7 @@
       },
       "UploadCoverFileDto": {
         "required": [
-          "id",
-          "url"
+          "id"
         ],
         "type": "object",
         "properties": {
@@ -31066,6 +32713,10 @@
             "format": "int32"
           },
           "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "fileName": {
             "type": "string",
             "nullable": true
           },
@@ -31084,6 +32735,9 @@
           "url": {
             "minLength": 1,
             "type": "string"
+          },
+          "isInternalUrl": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -31813,6 +33467,10 @@
           "mangaBakaId": {
             "type": "integer",
             "format": "int64"
+          },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -31930,6 +33588,9 @@
     {
       "name": "Image",
       "description": "Responsible for servicing up images stored in Kavita for entities"
+    },
+    {
+      "name": "KavitaPlusAudit"
     },
     {
       "name": "Koreader",

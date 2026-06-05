@@ -79,6 +79,7 @@ public class TaskScheduler : ITaskScheduler
     public const string AuthKeyExpirationId = TaskSchedulerConstants.AuthKeyExpirationId;
     public const string EnsureSideNavId = TaskSchedulerConstants.EnsureSideNavId;
     public const string FlushUserActiveTaskId = TaskSchedulerConstants.FlushUserActiveTaskId;
+    public const string PurgeKavitaPlusAuditLogsId = TaskSchedulerConstants.PurgeKavitaPlusAuditLogsId;
 
     private const int BaseRetryDelay = 60; // 1-minute
 
@@ -243,7 +244,6 @@ public class TaskScheduler : ITaskScheduler
             service => service.FlushAsync(CancellationToken.None),
             "*/5 * * * *", RecurringJobOptions);
 
-        BackgroundJob.Enqueue(() => ScheduleKavitaPlusTasks(CancellationToken.None));
     }
 
     private static bool IsInvalidCronSetting(string setting)
@@ -253,9 +253,7 @@ public class TaskScheduler : ITaskScheduler
 
     public async Task ScheduleKavitaPlusTasks(CancellationToken cancellationToken = default)
     {
-        // KavitaPlus based (needs license check)
-        var license = (await _unitOfWork.SettingsRepository.GetSettingAsync(ServerSettingKey.LicenseKey, cancellationToken)).Value;
-        if (string.IsNullOrEmpty(license) || !await _licenseService.HasActiveSubscription(license, cancellationToken))
+        if (!await _licenseService.HasActiveLicense(false, cancellationToken))
         {
             return;
         }
@@ -273,6 +271,7 @@ public class TaskScheduler : ITaskScheduler
 
         // KavitaPlus Scrobbling (every hour) - randomise minutes to spread requests out for K+
         var randomMinute = Rnd.Next(0, 60);
+        _logger.LogDebug("Scheduling KavitaPlus Scrobbling Task every hour @ {Minute}m", randomMinute);
         RecurringJob.AddOrUpdate(ProcessScrobblingEventsId,
             () => _scrobblingService.ProcessUpdatesSinceLastSync(CancellationToken.None),
             Cron.Hourly(randomMinute), RecurringJobOptions);
@@ -295,6 +294,10 @@ public class TaskScheduler : ITaskScheduler
         RecurringJob.AddOrUpdate(KavitaPlusWantToReadSyncId,
             () => _wantToReadSyncService.Sync(CancellationToken.None),
             Cron.Weekly(DayOfWeekHelper.Random()), RecurringJobOptions);
+
+        RecurringJob.AddOrUpdate<IKavitaPlusAuditService>(PurgeKavitaPlusAuditLogsId,
+            service => service.PurgeOldLogsAsync(CancellationToken.None),
+            Cron.Daily, RecurringJobOptions);
     }
 
 
@@ -310,6 +313,7 @@ public class TaskScheduler : ITaskScheduler
         RecurringJob.RemoveIfExists(KavitaPlusDataRefreshId);
         RecurringJob.RemoveIfExists(KavitaPlusStackSyncId);
         RecurringJob.RemoveIfExists(KavitaPlusWantToReadSyncId);
+        RecurringJob.RemoveIfExists(PurgeKavitaPlusAuditLogsId);
     }
 
     #region StatsTasks
