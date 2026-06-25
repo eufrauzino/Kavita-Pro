@@ -23,6 +23,7 @@ using Kavita.Models.DTOs.Filtering.v2.Requests;
 using Kavita.Models.DTOs.Filtering.v2.SortFields;
 using Kavita.Models.DTOs.Filtering.v2.SortOptions;
 using Kavita.Models.DTOs.KavitaPlus.Metadata;
+using Kavita.Models.DTOs.KavitaPlus.Scrobble;
 using Kavita.Models.DTOs.Metadata;
 using Kavita.Models.DTOs.Person;
 using Kavita.Models.DTOs.Reader;
@@ -759,46 +760,56 @@ public class SeriesRepository(DataContext context, IMapper mapper) : ISeriesRepo
     private async Task<IQueryable<Series>> ApplyCollectionFilter(SeriesFilterV2Dto seriesFilter, IQueryable<Series> query,
         int userId, AgeRestriction userRating, CancellationToken ct = default)
     {
-        var collectionStmt = seriesFilter.Statements.FirstOrDefault(stmt => stmt.Field == SeriesFilterField.CollectionTags);
-        if (collectionStmt == null) return query;
+        var collectionStmts = seriesFilter.Statements
+            .Where(stmt => stmt.Field == SeriesFilterField.CollectionTags)
+            .ToList();
+        if (collectionStmts.Count == 0) return query;
 
-        var value = (IList<int>) SeriesFilterFieldValueConverter.ConvertValue(collectionStmt.Field, collectionStmt.Value);
-
-        if (value.Count == 0)
+        foreach (var collectionStmt in collectionStmts)
         {
-            return query;
+            var value = (IList<int>) SeriesFilterFieldValueConverter.ConvertValue(collectionStmt.Field, collectionStmt.Value);
+
+            if (value.Count == 0)
+            {
+                continue;
+            }
+
+            if (collectionStmt.Comparison != FilterComparison.MustContains)
+            {
+                var collectionSeries = await context.AppUserCollection
+                    .Where(uc => uc.Promoted || uc.AppUserId == userId)
+                    .Where(uc => value.Contains(uc.Id))
+                    .SelectMany(uc => uc.Items)
+                    .RestrictAgainstAgeRestriction(userRating)
+                    .Select(s => s.Id)
+                    .Distinct()
+                    .ToListAsync(ct);
+
+                query = query.HasCollectionTags(true, collectionStmt.Comparison, value, collectionSeries);
+                continue;
+            }
+
+            var collectionSeriesTasks = value.Select(async collectionId =>
+            {
+                return await context.AppUserCollection
+                    .Where(uc => uc.Promoted || uc.AppUserId == userId)
+                    .Where(uc => uc.Id == collectionId)
+                    .SelectMany(uc => uc.Items)
+                    .RestrictAgainstAgeRestriction(userRating)
+                    .Select(s => s.Id)
+                    .ToListAsync(ct);
+            });
+
+            var collectionSeriesLists = await Task.WhenAll(collectionSeriesTasks);
+
+            var commonSeries = collectionSeriesLists
+                .Aggregate((common, next) => common.Intersect(next)
+                    .ToList());
+
+            query = query.Where(s => commonSeries.Contains(s.Id));
         }
 
-        var collectionSeries = await context.AppUserCollection
-            .Where(uc => uc.Promoted || uc.AppUserId == userId)
-            .Where(uc => value.Contains(uc.Id))
-            .SelectMany(uc => uc.Items)
-            .RestrictAgainstAgeRestriction(userRating)
-            .Select(s => s.Id)
-            .Distinct()
-            .ToListAsync(ct);
-
-        if (collectionStmt.Comparison != FilterComparison.MustContains)
-            return query.HasCollectionTags(true, collectionStmt.Comparison, value, collectionSeries);
-
-        var collectionSeriesTasks = value.Select(async collectionId =>
-        {
-            return await context.AppUserCollection
-                .Where(uc => uc.Promoted || uc.AppUserId == userId)
-                .Where(uc => uc.Id == collectionId)
-                .SelectMany(uc => uc.Items)
-                .RestrictAgainstAgeRestriction(userRating)
-                .Select(s => s.Id)
-                .ToListAsync(ct);
-        });
-
-        var collectionSeriesLists = await Task.WhenAll(collectionSeriesTasks);
-
-        // Find the common series among all collections
-        var commonSeries = collectionSeriesLists.Aggregate((common, next) => common.Intersect(next).ToList());
-
-        // Filter the original query based on the common series
-        return query.Where(s => commonSeries.Contains(s.Id));
+        return query;
     }
 
     private IQueryable<Series> ApplyWantToReadFilter(SeriesFilterV2Dto seriesFilter, IQueryable<Series> query, int userId)
@@ -1770,5 +1781,77 @@ public class SeriesRepository(DataContext context, IMapper mapper) : ISeriesRepo
 
         if (ret == null) return AgeRating.Unknown;
         return ret;
+    }
+
+    public Task<List<Series>> GetSeriesForReadStatusTransitionRuleAsync(int userId, ReadStatusTransitionRule rule, bool requireUnReadChapters, CancellationToken ct)
+    {
+        if (!rule.Enabled || rule.Days <= 0) return Task.FromResult(new List<Series>());
+
+        var cutoffDate = DateTime.UtcNow.AddDays(-rule.Days);
+        var excludedStatuses = rule.ExcludedPublicationStatus;
+
+        var seriesProgressStats = context.AppUserProgresses
+            .Where(p => p.AppUserId == userId && p.PagesRead > 0)
+            .GroupBy(p => p.SeriesId)
+            .Select(g => new
+            {
+                SeriesId = g.Key,
+                LastProgressUtc = g.Max(p => p.LastModifiedUtc)
+            });
+
+        var seriesChapterCounts = context.Chapter
+            .GroupBy(c => c.Volume.SeriesId)
+            .Select(g => new
+            {
+                SeriesId = g.Key,
+                TotalChapters = g.Count(),
+                LatestChapterAddedUtc = g.Max(c => c.CreatedUtc)
+            });
+
+        var seriesReadCounts = context.AppUserProgresses
+            .Where(p => p.AppUserId == userId)
+            .Join(context.Chapter,
+                p => p.ChapterId,
+                c => c.Id,
+                (p, c) => new { p.SeriesId, IsRead = p.PagesRead >= c.Pages })
+            .GroupBy(x => x.SeriesId)
+            .Select(g => new
+            {
+                SeriesId = g.Key,
+                ReadChapters = g.Count(x => x.IsRead)
+            });
+
+        return context.Series
+            .Where(s => !excludedStatuses.Contains(s.Metadata.PublicationStatus))
+            .Join(seriesProgressStats,
+                s => s.Id,
+                sp => sp.SeriesId,
+                (s, sp) => new { Series = s, sp.LastProgressUtc })
+            .Join(seriesChapterCounts,
+                x => x.Series.Id,
+                cc => cc.SeriesId,
+                (x, cc) => new { x.Series, x.LastProgressUtc, cc.TotalChapters, cc.LatestChapterAddedUtc })
+            .Join(seriesReadCounts,
+                x => x.Series.Id,
+                rc => rc.SeriesId,
+                (x, rc) => new
+                {
+                    x.Series,
+                    x.LastProgressUtc,
+                    x.TotalChapters,
+                    x.LatestChapterAddedUtc,
+                    rc.ReadChapters,
+                    IsCompletelyRead = x.TotalChapters > 0 && x.TotalChapters == rc.ReadChapters
+                })
+            .Where(x =>
+                x.IsCompletelyRead
+                    // Completely read: last progress is >N days before the newest chapter was added
+                    ? x.LastProgressUtc < x.LatestChapterAddedUtc.AddDays(-rule.Days)
+                    // Not completely read: last progress is >N days ago from today
+                    : x.LastProgressUtc < cutoffDate)
+            .WhereIf(requireUnReadChapters, x => x.ReadChapters < x.TotalChapters)
+            .Select(x => x.Series)
+            .Includes(SeriesIncludes.Chapters | SeriesIncludes.ExternalMetadata | SeriesIncludes.Metadata | SeriesIncludes.Library)
+            .ToListAsync(ct);
     }
 }

@@ -175,14 +175,14 @@ public class ExternalSeriesMetadataRepository(DataContext context, IMapper mappe
         await context.SaveChangesAsync(ct);
     }
 
-    public async Task<IList<int>> GetSeriesThatNeedExternalMetadata(int limit, bool includeStaleData = false,
+    public async Task<List<int>> GetSeriesThatNeedExternalMetadata(int limit, bool includeStaleData = false,
         CancellationToken ct = default)
     {
         return await context.Series
             .Where(s => !IExternalMetadataService.NonEligibleLibraryTypes.Contains(s.Library.Type))
             .Where(s => s.Library.AllowMetadataMatching)
             .WhereIf(includeStaleData, s => s.ExternalSeriesMetadata == null || s.ExternalSeriesMetadata.ValidUntilUtc < DateTime.UtcNow)
-            .Where(s => s.ExternalSeriesMetadata == null || s.ExternalSeriesMetadata.AniListId == 0)
+            .WhereIf(!includeStaleData, s => s.ExternalSeriesMetadata == null || s.ExternalSeriesMetadata.AniListId == 0)
             .Where(s => !s.IsBlacklisted && !s.DontMatch)
             .OrderByDescending(s => s.Library.Type)
             .ThenBy(s => s.NormalizedName)

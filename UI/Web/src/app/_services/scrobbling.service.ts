@@ -9,8 +9,10 @@ import {ScrobbleHold} from "../_models/scrobbling/scrobble-hold";
 import {PaginatedResult} from "../_models/pagination";
 import {ScrobbleEventFilter} from "../_models/scrobbling/scrobble-event-filter";
 import {UtilityService} from "../shared/_services/utility.service";
-import {forkJoin} from "rxjs";
 import {KavitaPlusAuditEntry} from "../_models/kavitaplus/kavita-plus-audit-entry";
+import {ScrobbleProviderSettings} from "../_models/kavitaplus/scrobble-providers/scrobble-provider-settings";
+import {UpdateScrobbleProvider} from "../_models/kavitaplus/scrobble-providers/update-scrobble-provider";
+import {UserScrobbleProvider} from "../_models/kavitaplus/scrobble-providers/user-scrobble-provider";
 
 export enum ScrobbleProvider {
   Kavita = 0,
@@ -21,17 +23,6 @@ export enum ScrobbleProvider {
   MangaBaka = 6,
 }
 
-/**
- * TODO: This is a temp wrapper until I merge Amelia's Scrobble Provider Rework branch
- */
-export interface UserScrobbleProvider {
-  userName: string | null;
-  authenticationToken: string | null;
-  validUntilUtc: string;
-  lastSyncedUtc: string;
-  provider: ScrobbleProvider;
-}
-
 @Injectable({
   providedIn: 'root'
 })
@@ -39,65 +30,45 @@ export class ScrobblingService {
   private httpClient = inject(HttpClient);
   private utilityService = inject(UtilityService);
 
-
   baseUrl = environment.apiUrl;
 
-  hasTokenExpired(provider: ScrobbleProvider) {
-    return this.httpClient.get<string>(this.baseUrl + 'scrobbling/token-expired?provider=' + provider, TextResonse)
-      .pipe(map(r => r === "true"));
+  validExternalScrobbleProviders() {
+    return [ScrobbleProvider.AniList, ScrobbleProvider.Mal, ScrobbleProvider.Hardcover, ScrobbleProvider.MangaBaka]
   }
 
-  /**
-   * Returns if the token was new or not
-   */
-  updateAniListToken(token: string) {
-    return this.httpClient.post<boolean>(this.baseUrl + 'scrobbling/update-anilist-token', {token}, TextResonse)
-      .pipe(map(r => r + '' === 'true'));
-  }
-
-  /**
-   * Returns if the token was new or not
-   */
-  updateMalToken(username: string, accessToken: string) {
-    return this.httpClient.post<boolean>(this.baseUrl + 'scrobbling/update-mal-token', {username, accessToken}, TextResonse)
-      .pipe(map(r => r + '' === 'true'));
-  }
-
-  getAniListToken() {
-    return this.httpClient.get<string>(this.baseUrl + 'scrobbling/anilist-token', TextResonse);
-  }
-
-  getMalToken() {
-    return this.httpClient.get<{username: string, accessToken: string}>(this.baseUrl + 'scrobbling/mal-token');
-  }
-
-  /**
-   * Returns all providers with user's information filled out
-   */
   getScrobbleProviders() {
-    // TODO: Port this to the backend
+    return this.httpClient.get<UserScrobbleProvider[]>(this.baseUrl + 'scrobbling/scrobble-settings').pipe(
+      map(providers => providers.map(p => UserScrobbleProvider.From(p)))
+    );
+  }
 
-    const defaultProviders = [
-      {provider: ScrobbleProvider.AniList},
-      {provider: ScrobbleProvider.Mal},
-      {provider: ScrobbleProvider.MangaBaka},
-      {provider: ScrobbleProvider.Hardcover},
-    ] as UserScrobbleProvider[];
+  getNextScrobble() {
+    return this.httpClient.get<string | null>(this.baseUrl + 'scrobbling/next-scrobble-time', TextResonse).pipe(map(res => {
+      // For some reason, sending a Raw DateTime puts quotes around it
+      if (res && res.startsWith('"')) {
+        return res.replaceAll('"', '');
+      }
 
-    return forkJoin({
-      aniList: this.getAniListToken(),
-      mal: this.getMalToken(),
-    }).pipe(map(res => {
-
-      const data = [...defaultProviders];
-      data[0].authenticationToken = res.aniList;
-
-      data[1].authenticationToken = res.mal.accessToken;
-      data[1].userName = res.mal.username;
-
-
-      return data;
+      return res;
     }));
+  }
+
+  saveScrobbleSettings(provider: ScrobbleProvider, settings: ScrobbleProviderSettings) {
+    return this.httpClient.post(this.baseUrl + 'scrobbling/update-scrobble-settings?provider=' + provider, settings);
+  }
+
+  saveUserScrobbleProvider(updateDto: UpdateScrobbleProvider) {
+    return this.httpClient.post(this.baseUrl + 'scrobbling/update-user-scrobble-provider', updateDto);
+  }
+
+  hasTokenExpired(provider: ScrobbleProvider) {
+    return this.httpClient.get<string>(this.baseUrl + 'scrobbling/token-expired?provider=' + provider, TextResonse).pipe(
+      map(s => s === 'true')
+    );
+  }
+
+  checkExpiredTokens() {
+    return this.httpClient.get<ScrobbleProvider[]>(this.baseUrl + 'scrobbling/expired-tokens');
   }
 
   /**
@@ -152,8 +123,14 @@ export class ScrobblingService {
     return this.httpClient.delete(this.baseUrl + 'scrobbling/remove-hold?seriesId=' + seriesId, TextResonse);
   }
 
-  triggerScrobbleEventGeneration() {
-    return this.httpClient.post(this.baseUrl + 'scrobbling/generate-scrobble-events', TextResonse);
+  triggerScrobbleEventGeneration(provider: ScrobbleProvider) {
+    return this.httpClient.post(this.baseUrl + 'scrobbling/generate-scrobble-events?scrobbleProvider=' + provider, TextResonse);
+  }
+
+  triggerScrobbleEventGenerationForAllValid() {
+    return this.httpClient.post<string>(this.baseUrl + 'scrobbling/generate-scrobble-events-all', {}, TextResonse).pipe(
+      map(s => s === 'true')
+    );
   }
 
   bulkRemoveEvents(eventIds: number[]) {

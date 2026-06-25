@@ -6,7 +6,6 @@ import {AccountService} from '../../../_services/account.service';
 import {KavitaPlusAuditService} from '../../../_services/kavitaplus-audit.service';
 import {KavitaPlusAuditSeriesInfo} from '../../../_models/kavitaplus/kavita-plus-audit-series-info';
 import {KavitaPlusAuditCategory} from '../../../_models/kavitaplus/kavita-plus-audit-category.enum';
-import {TimeAgoPipe} from '../../../_pipes/time-ago.pipe';
 import {KavitaPlusEventTypePipe} from '../../../_pipes/kavita-plus-event-type.pipe';
 import {KavitaPlusEventDescriptionPipe} from '../../../_pipes/kavita-plus-event-description.pipe';
 import {UtcToLocalTimePipe} from "../../../_pipes/utc-to-local-time.pipe";
@@ -21,13 +20,23 @@ import {
 } from "../../../shared/_components/scrobble-provider-image/scrobble-provider-image.component";
 import {ScrobbleProvider} from "../../../_services/scrobbling.service";
 import {ScrobbleProviderNamePipe} from "../../../_pipes/scrobble-provider-name.pipe";
+import {UtcToLocalDatePipe} from "../../../_pipes/utc-to-locale-date.pipe";
+import {TimeDifferencePipe} from "../../../_pipes/time-difference.pipe";
+import {
+  ScrobbleProviderTagBadgeComponent
+} from "../../../shared/_components/scrobble-provider-tag-badge/scrobble-provider-tag-badge.component";
+import {
+  MetadataProviderTagBadgeComponent
+} from "../../../shared/_components/metadata-provider-tag-badge/metadata-provider-tag-badge.component";
 
 @Component({
   selector: 'app-kavitaplus-tooltip',
   templateUrl: './kavitaplus-tooltip.component.html',
   styleUrls: ['./kavitaplus-tooltip.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslocoDirective, TimeAgoPipe, KavitaPlusEventTypePipe, KavitaPlusEventDescriptionPipe, UtcToLocalTimePipe, KavitaPlusAuditEventTypeIconComponent, AuditLogErrorPipe, ScrobbleProviderImageComponent, ScrobbleProviderNamePipe],
+  imports: [TranslocoDirective, KavitaPlusEventTypePipe, KavitaPlusEventDescriptionPipe, UtcToLocalTimePipe,
+    KavitaPlusAuditEventTypeIconComponent, AuditLogErrorPipe, ScrobbleProviderImageComponent, ScrobbleProviderNamePipe,
+    UtcToLocalDatePipe, TimeDifferencePipe, ScrobbleProviderTagBadgeComponent, MetadataProviderTagBadgeComponent],
 })
 export class KavitaplusTooltipComponent implements OnInit {
   private readonly auditService = inject(KavitaPlusAuditService);
@@ -49,11 +58,10 @@ export class KavitaplusTooltipComponent implements OnInit {
   });
 
   displayedEvents = computed(() => this.filteredEvents().slice(0, 5));
-
-  totalCount    = computed(() => this.seriesInfo()?.recentEvents.length ?? 0);
+  totalCount = computed(() => this.seriesInfo()?.recentEvents.length ?? 0);
   metadataCount = computed(() => this.seriesInfo()?.recentEvents.filter(e => e.category === KavitaPlusAuditCategory.Metadata).length ?? 0);
   scrobbleCount = computed(() => this.seriesInfo()?.recentEvents.filter(e => e.category === KavitaPlusAuditCategory.Scrobble).length ?? 0);
-  matchCount    = computed(() => this.seriesInfo()?.recentEvents.filter(e => e.category === KavitaPlusAuditCategory.Match).length ?? 0);
+  matchCount = computed(() => this.seriesInfo()?.recentEvents.filter(e => e.category === KavitaPlusAuditCategory.Match).length ?? 0);
 
   ngOnInit() {
     this.auditService.getSeriesInfo(this.seriesId()).subscribe({

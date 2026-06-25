@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Kavita.Models.Entities.Enums;
 using Kavita.Models.Entities.Interfaces;
 
 namespace Kavita.Models.Entities.Metadata;
@@ -10,6 +11,11 @@ namespace Kavita.Models.Entities.Metadata;
 public class ExternalSeriesMetadata : IEntityDate
 {
     public int Id { get; set; }
+
+    /// <summary>
+    /// Where is this metadata coming from
+    /// </summary>
+    public MetadataProvider Provider { get; set; }
     /// <summary>
     /// External Reviews for the Series. Managed by Kavita for Kavita+ users
     /// </summary>
@@ -30,6 +36,8 @@ public class ExternalSeriesMetadata : IEntityDate
     public int CbrId { get; set; }
     public long MalId { get; set; }
     public string GoogleBooksId { get; set; }
+    public long MangabakaId { get; set; }
+    public int HardcoverId { get; set; }
 
     /// <summary>
     /// Data is valid until this time

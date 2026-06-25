@@ -203,14 +203,6 @@ public class UserRepository(DataContext context, UserManager<AppUser> userManage
             .ToListAsync(ct);
     }
 
-    public async Task<IEnumerable<AppUserPreferences>> GetAllPreferencesByFontAsync(string fontName, CancellationToken ct = default)
-    {
-        return await context.AppUserPreferences
-            .Where(p => p.BookReaderFontFamily == fontName)
-            .AsSplitQuery()
-            .ToListAsync(ct);
-    }
-
     public async Task<bool> HasAccessToLibrary(int userId, int libraryId, CancellationToken ct = default)
     {
         return await context.Library
@@ -318,12 +310,26 @@ public class UserRepository(DataContext context, UserManager<AppUser> userManage
             .ToListAsync(ct);
     }
 
+    public Task<List<AppUserChapterRating>> GetChaptersWithRatings(int userId, CancellationToken ct = default)
+    {
+        return context.AppUserChapterRating
+            .Where(cr => cr.AppUserId == userId && cr.Rating > 0)
+            .ToListAsync(ct);
+    }
+
     public async Task<IEnumerable<AppUserRating>> GetSeriesWithReviews(int userId, CancellationToken ct = default)
     {
         return await context.AppUserRating
             .Where(u => u.AppUserId == userId && !string.IsNullOrEmpty(u.Review))
             .Include(u => u.Series)
             .AsSplitQuery()
+            .ToListAsync(ct);
+    }
+
+    public Task<List<AppUserChapterRating>> GetChaptersWithReviews(int userId, CancellationToken ct = default)
+    {
+        return context.AppUserChapterRating
+            .Where(cr => cr.AppUserId == userId && !string.IsNullOrEmpty(cr.Review))
             .ToListAsync(ct);
     }
 
@@ -341,6 +347,7 @@ public class UserRepository(DataContext context, UserManager<AppUser> userManage
             .ProjectTo<ScrobbleHoldDto>(mapper.ConfigurationProvider)
             .ToListAsync(ct);
     }
+
 
     public async Task<string> GetLocale(int userId, CancellationToken ct = default)
     {
@@ -477,31 +484,6 @@ public class UserRepository(DataContext context, UserManager<AppUser> userManage
         return await context.AppUserSideNavStream
             .Where(d => streamIds.Contains(d.Id))
             .ToListAsync(ct);
-    }
-
-    public async Task<IEnumerable<UserTokenInfo>> GetUserTokenInfo(CancellationToken ct = default)
-    {
-        var users = await context.AppUser
-            .Select(u => new
-            {
-                u.Id,
-                u.UserName,
-                u.AniListAccessToken, // JWT Token
-                u.MalAccessToken // JWT Token
-            })
-            .ToListAsync(ct);
-
-        var userTokenInfos = users.Select(user => new UserTokenInfo
-        {
-            UserId = user.Id,
-            Username = user.UserName,
-            IsAniListTokenSet = !string.IsNullOrEmpty(user.AniListAccessToken),
-            AniListValidUntilUtc = JwtHelper.GetTokenExpiry(user.AniListAccessToken),
-            IsAniListTokenValid = JwtHelper.IsTokenValid(user.AniListAccessToken),
-            IsMalTokenSet = !string.IsNullOrEmpty(user.MalAccessToken),
-        });
-
-        return userTokenInfos;
     }
 
     /// <summary>

@@ -2,12 +2,12 @@
   "openapi": "3.0.4",
   "info": {
     "title": "Kavita",
-    "description": "Kavita provides a set of APIs authenticated via an Auth Key passed in the `x-api-key` header. Generate an Auth Key under User Settings → Manage Auth Keys, paste it into the Authorize panel, and all Try It requests will include it. Assume all fields of a payload are required unless marked optional. Built against v0.9.0.5",
+    "description": "Kavita provides a set of APIs authenticated via an Auth Key passed in the `x-api-key` header. Generate an Auth Key under User Settings → Manage Auth Keys, paste it into the Authorize panel, and all Try It requests will include it. Assume all fields of a payload are required unless marked optional. Built against v0.9.0.11",
     "license": {
       "name": "GPL-3.0",
       "url": "https://github.com/Kareadita/Kavita/blob/develop/LICENSE"
     },
-    "version": "0.9.0.5"
+    "version": "0.9.0.11"
   },
   "servers": [
     {
@@ -4888,12 +4888,12 @@
         "tags": [
           "Font"
         ],
-        "summary": "Removes a font from the system",
+        "summary": "Removes a font family from the system. The family is validated for in-use server side and only removed when\nit is not selected by a user, or when an admin forces the deletion.",
         "parameters": [
           {
             "name": "fontId",
             "in": "query",
-            "description": "",
+            "description": "Any file within the family to delete",
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -4902,34 +4902,10 @@
           {
             "name": "force",
             "in": "query",
-            "description": "If the font is in use by other users and an admin wants it deleted, they must confirm to force delete it. This is prompted in the UI.",
+            "description": "If the family is in use and an admin wants it deleted, they must confirm to force delete it. This is prompted in the UI.",
             "schema": {
               "type": "boolean",
               "default": false
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/Font/in-use": {
-      "get": {
-        "tags": [
-          "Font"
-        ],
-        "summary": "Returns if the given font is in use by any other user. System provided fonts will always return true.",
-        "parameters": [
-          {
-            "name": "fontId",
-            "in": "query",
-            "description": "",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
             }
           }
         ],
@@ -4939,17 +4915,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "boolean"
+                  "$ref": "#/components/schemas/FontDeleteResultDto"
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "boolean"
+                  "$ref": "#/components/schemas/FontDeleteResultDto"
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "boolean"
+                  "$ref": "#/components/schemas/FontDeleteResultDto"
                 }
               }
             }
@@ -5024,7 +5000,33 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EpubFontDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EpubFontDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EpubFontDto"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -7116,6 +7118,176 @@
         }
       }
     },
+    "/api/License/cancel": {
+      "delete": {
+        "tags": [
+          "License"
+        ],
+        "summary": "Cancels the active Kavita+ Subscription tied to this server. License will elapse at end of billing period.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelKavitaPlusLicenseDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelKavitaPlusLicenseDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelKavitaPlusLicenseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/License/products": {
+      "get": {
+        "tags": [
+          "License"
+        ],
+        "summary": "Returns the available Kavita+ products (billing interval and list price) the renew flow can select.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KavitaPlusProductInfoDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KavitaPlusProductInfoDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KavitaPlusProductInfoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/License/renew": {
+      "post": {
+        "tags": [
+          "License"
+        ],
+        "summary": "Renews the subscription on the given billing interval and returns the Stripe Checkout (Pay Now) URL the customer visits to pay.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenewKavitaPlusLicenseDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenewKavitaPlusLicenseDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenewKavitaPlusLicenseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/License/change-email": {
+      "post": {
+        "tags": [
+          "License"
+        ],
+        "summary": "Change email on Kavita+ License/Stripe - Sends a confirmation email on Kavita+ side. No-op for server.",
+        "requestBody": {
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeEmailOnLicenseDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeEmailOnLicenseDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeEmailOnLicenseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Locale": {
       "get": {
         "tags": [
@@ -7866,6 +8038,76 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/OAuth/start": {
+      "get": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "Start the OAuth flow for the given upstream, redirect (302!) to KavitaPlus",
+        "parameters": [
+          {
+            "name": "upstream",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "$ref": "#/components/schemas/OAuthUpstream"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/OAuth/callback": {
+      "get": {
+        "tags": [
+          "OAuth"
+        ],
+        "summary": "Callback from KavitaPlus.",
+        "parameters": [
+          {
+            "name": "upstream",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "$ref": "#/components/schemas/OAuthUpstream"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "apiKey",
+            "in": "query",
+            "description": "Encrypted ApiKey",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "refreshToken",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -13542,29 +13784,38 @@
         }
       }
     },
-    "/api/Scrobbling/anilist-token": {
+    "/api/Scrobbling/scrobble-settings": {
       "get": {
         "tags": [
           "Scrobbling"
         ],
-        "summary": "Get the current user's AniList token",
+        "summary": "Returns all scrobble providers for a user. This list is guaranteed to contain an entry for each currently\nvalid scrobble provider. If the user has none setup, returns the empty default values.",
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "string"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScrobbleProviderDto"
+                  }
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScrobbleProviderDto"
+                  }
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "string"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScrobbleProviderDto"
+                  }
                 }
               }
             }
@@ -13572,132 +13823,79 @@
         }
       }
     },
-    "/api/Scrobbling/mal-token": {
-      "get": {
-        "tags": [
-          "Scrobbling"
-        ],
-        "summary": "Get the current user's MAL token and username",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/MalUserInfoDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MalUserInfoDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MalUserInfoDto"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Scrobbling/update-anilist-token": {
+    "/api/Scrobbling/update-scrobble-settings": {
       "post": {
         "tags": [
           "Scrobbling"
         ],
-        "summary": "Update the current user's AniList token",
+        "summary": "Updates the scrobble settings for a given provider. Libraries are filtered on supported types",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "$ref": "#/components/schemas/ScrobbleProvider"
+            }
+          }
+        ],
         "requestBody": {
           "description": "",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AniListUpdateDto"
+                "$ref": "#/components/schemas/ScrobbleProviderSettingsDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/AniListUpdateDto"
+                "$ref": "#/components/schemas/ScrobbleProviderSettingsDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/AniListUpdateDto"
+                "$ref": "#/components/schemas/ScrobbleProviderSettingsDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "boolean"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
     },
-    "/api/Scrobbling/update-mal-token": {
+    "/api/Scrobbling/update-user-scrobble-provider": {
       "post": {
         "tags": [
           "Scrobbling"
         ],
-        "summary": "Update the current user's MAL token (Client ID) and Username",
+        "summary": "Update authentication details for the given provider",
+        "description": "Kicks of a sync background job, listen on signalr for when it completes",
         "requestBody": {
           "description": "",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MalUserInfoDto"
+                "$ref": "#/components/schemas/UpdateScrobbleProviderDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/MalUserInfoDto"
+                "$ref": "#/components/schemas/UpdateScrobbleProviderDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/MalUserInfoDto"
+                "$ref": "#/components/schemas/UpdateScrobbleProviderDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "boolean"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -13707,10 +13905,50 @@
         "tags": [
           "Scrobbling"
         ],
-        "summary": "When a user request to generate scrobble events from history. Should only be ran once per user.",
+        "summary": "Generate scrobble events from history. Should only be ran once per user.",
+        "parameters": [
+          {
+            "name": "scrobbleProvider",
+            "in": "query",
+            "description": "Members:\n- `0` — Kavita\n- `1` — AniList\n- `2` — Mal\n- `4` — Cbr\n- `5` — Hardcover\n- `6` — MangaBaka",
+            "schema": {
+              "$ref": "#/components/schemas/ScrobbleProvider"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Scrobbling/generate-scrobble-events-all": {
+      "post": {
+        "tags": [
+          "Scrobbling"
+        ],
+        "summary": "Generate scrobble events from history for all valid providers.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
           }
         }
       }
@@ -13748,6 +13986,45 @@
               "text/json": {
                 "schema": {
                   "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Scrobbling/expired-tokens": {
+      "get": {
+        "tags": [
+          "Scrobbling"
+        ],
+        "summary": "Returns all expired tokens for the current user",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScrobbleProvider"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScrobbleProvider"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScrobbleProvider"
+                  }
                 }
               }
             }
@@ -14054,36 +14331,6 @@
         }
       }
     },
-    "/api/Scrobbling/has-ran-scrobble-gen": {
-      "get": {
-        "tags": [
-          "Scrobbling"
-        ],
-        "summary": "Has the logged-in user ran scrobble generation",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "boolean"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/Scrobbling/bulk-remove-events": {
       "post": {
         "tags": [
@@ -14172,6 +14419,42 @@
               "text/json": {
                 "schema": {
                   "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Scrobbling/next-scrobble-time": {
+      "get": {
+        "tags": [
+          "Scrobbling"
+        ],
+        "summary": "Returns when Scrobbling upload will next execute",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "format": "date-time",
+                  "nullable": true
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "date-time",
+                  "nullable": true
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "date-time",
+                  "nullable": true
                 }
               }
             }
@@ -15855,6 +16138,47 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Series/match-info": {
+      "get": {
+        "tags": [
+          "Series"
+        ],
+        "summary": "Returns extra information around an existing match (and series) to display on the Match Screen.",
+        "parameters": [
+          {
+            "name": "seriesId",
+            "in": "query",
+            "description": "",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchSeriesInfoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchSeriesInfoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchSeriesInfoDto"
+                }
+              }
+            }
           }
         }
       }
@@ -20592,7 +20916,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/UserTokenInfo"
+                    "$ref": "#/components/schemas/UserTokenInfoDto"
                   }
                 }
               },
@@ -20600,7 +20924,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/UserTokenInfo"
+                    "$ref": "#/components/schemas/UserTokenInfoDto"
                   }
                 }
               },
@@ -20608,7 +20932,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/UserTokenInfo"
+                    "$ref": "#/components/schemas/UserTokenInfoDto"
                   }
                 }
               }
@@ -21112,16 +21436,6 @@
           },
           "includeUnknowns": {
             "type": "boolean"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AniListUpdateDto": {
-        "type": "object",
-        "properties": {
-          "token": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -22220,6 +22534,23 @@
         },
         "additionalProperties": false
       },
+      "CancelKavitaPlusLicenseDto": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CblBookResult": {
         "type": "object",
         "properties": {
@@ -22629,6 +22960,24 @@
             "format": "int32"
           },
           "seriesName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChangeEmailOnLicenseDto": {
+        "required": [
+          "newEmail",
+          "oldEmail"
+        ],
+        "type": "object",
+        "properties": {
+          "oldEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "newEmail": {
             "type": "string",
             "nullable": true
           }
@@ -24017,6 +24366,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "family": {
+            "type": "string",
+            "nullable": true
+          },
           "name": {
             "type": "string",
             "nullable": true
@@ -24025,6 +24378,14 @@
             "$ref": "#/components/schemas/FontProvider"
           },
           "fileName": {
+            "type": "string",
+            "nullable": true
+          },
+          "style": {
+            "type": "string",
+            "nullable": true
+          },
+          "weight": {
             "type": "string",
             "nullable": true
           }
@@ -24662,6 +25023,18 @@
           "Annotation"
         ]
       },
+      "FontDeleteResultDto": {
+        "type": "object",
+        "properties": {
+          "deleted": {
+            "type": "boolean"
+          },
+          "inUse": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "FontProvider": {
         "enum": [
           1,
@@ -25098,22 +25471,25 @@
           0,
           1,
           2,
-          3
+          3,
+          4
         ],
         "type": "integer",
-        "description": "Members:\n- `0` — Match\n- `1` — Metadata\n- `2` — Scrobble\n- `3` — Sync",
+        "description": "Members:\n- `0` — Match\n- `1` — Metadata\n- `2` — Scrobble\n- `3` — Sync\n- `4` — System",
         "format": "int32",
         "x-enum-varnames": [
           "Match",
           "Metadata",
           "Scrobble",
-          "Sync"
+          "Sync",
+          "System"
         ],
         "x-enum-descriptions": [
           "Match",
           "Metadata",
           "Scrobble",
-          "Sync"
+          "Sync",
+          "System"
         ]
       },
       "KavitaPlusAuditEntryDto": {
@@ -25190,6 +25566,9 @@
           "metadataExtras": {
             "$ref": "#/components/schemas/KavitaPlusAuditMetadataExtrasDto"
           },
+          "systemDetails": {
+            "$ref": "#/components/schemas/KavitaPlusAuditSystemDetailsDto"
+          },
           "canRetry": {
             "type": "boolean"
           }
@@ -25207,6 +25586,9 @@
           },
           "subjectType": {
             "$ref": "#/components/schemas/AuditSubjectType"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/ScrobbleProvider"
           },
           "userId": {
             "type": "integer",
@@ -25336,6 +25718,9 @@
             "format": "int32",
             "nullable": true
           },
+          "metadataProvider": {
+            "$ref": "#/components/schemas/MetadataProvider"
+          },
           "nextRefreshUtc": {
             "type": "string",
             "format": "date-time",
@@ -25415,6 +25800,10 @@
             "format": "int32",
             "nullable": true
           },
+          "collectionUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "seriesName": {
             "type": "string",
             "nullable": true
@@ -25440,6 +25829,23 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusAuditSystemDetailsDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/ScrobbleProvider"
+          },
+          "validUntilUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "userInfo": {
+            "$ref": "#/components/schemas/KavitaPlusUserInfo"
           }
         },
         "additionalProperties": false
@@ -25493,10 +25899,12 @@
           57,
           60,
           61,
-          62
+          62,
+          80,
+          81
         ],
         "type": "integer",
-        "description": "Members:\n- `0` — SeriesMatched\n- `1` — SeriesMatchFailed\n- `2` — SeriesBlacklisted\n- `3` — SeriesMatchFixed\n- `4` — SeriesDontMatchSet\n- `10` — MetadataFetched\n- `11` — MetadataUpdated\n- `13` — CoverUpdated\n- `20` — ChapterMetadataUpdated\n- `21` — ChapterCoverUpdated\n- `30` — PersonCoverUpdated\n- `31` — PersonAliasAdded\n- `40` — CollectionSynced\n- `41` — CollectionItemAdded\n- `50` — ScrobbleEventCreated\n- `51` — ScrobbleEventUpdated\n- `52` — ScrobbleEventSent\n- `53` — ScrobbleEventFailed\n- `54` — ScrobbleRateLimitHit\n- `55` — ScrobbleEventSkipped\n- `56` — ScrobbleHoldRemoved\n- `57` — ScrobbleHoldAdded\n- `60` — SyncStarted\n- `61` — SyncCompleted\n- `62` — SyncFailed",
+        "description": "Members:\n- `0` — SeriesMatched\n- `1` — SeriesMatchFailed\n- `2` — SeriesBlacklisted\n- `3` — SeriesMatchFixed\n- `4` — SeriesDontMatchSet\n- `10` — MetadataFetched\n- `11` — MetadataUpdated\n- `13` — CoverUpdated\n- `20` — ChapterMetadataUpdated\n- `21` — ChapterCoverUpdated\n- `30` — PersonCoverUpdated\n- `31` — PersonAliasAdded\n- `40` — CollectionSynced\n- `41` — CollectionItemAdded\n- `50` — ScrobbleEventCreated\n- `51` — ScrobbleEventUpdated\n- `52` — ScrobbleEventSent\n- `53` — ScrobbleEventFailed\n- `54` — ScrobbleRateLimitHit\n- `55` — ScrobbleEventSkipped\n- `56` — ScrobbleHoldRemoved\n- `57` — ScrobbleHoldAdded\n- `60` — SyncStarted\n- `61` — SyncCompleted\n- `62` — SyncFailed\n- `80` — SystemTokenRefresh\n- `81` — SystemProviderInfoSync",
         "format": "int32",
         "x-enum-varnames": [
           "SeriesMatched",
@@ -25523,7 +25931,9 @@
           "ScrobbleHoldAdded",
           "SyncStarted",
           "SyncCompleted",
-          "SyncFailed"
+          "SyncFailed",
+          "SystemTokenRefresh",
+          "SystemProviderInfoSync"
         ],
         "x-enum-descriptions": [
           "SeriesMatched",
@@ -25550,7 +25960,9 @@
           "ScrobbleHoldAdded",
           "SyncStarted",
           "SyncCompleted",
-          "SyncFailed"
+          "SyncFailed",
+          "SystemTokenRefresh",
+          "SystemProviderInfoSync"
         ]
       },
       "KavitaPlusLicenseUsageDto": {
@@ -25566,6 +25978,27 @@
               "$ref": "#/components/schemas/ApiUsageDto"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "KavitaPlusProductInfoDto": {
+        "type": "object",
+        "properties": {
+          "productName": {
+            "type": "string",
+            "nullable": true
+          },
+          "priceAmount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "priceCurrency": {
+            "type": "string",
+            "nullable": true
+          },
+          "billingInterval": {
+            "$ref": "#/components/schemas/KavitaPlusBillingInterval"
           }
         },
         "additionalProperties": false
@@ -25704,10 +26137,22 @@
             "format": "float",
             "nullable": true
           },
+          "percentRead": {
+            "type": "number",
+            "format": "float",
+            "nullable": true
+          },
           "rating": {
             "type": "number",
             "format": "float",
             "nullable": true
+          },
+          "reviewBody": {
+            "type": "string",
+            "nullable": true
+          },
+          "readStatus": {
+            "$ref": "#/components/schemas/ScrobbleReadStatus"
           },
           "provider": {
             "$ref": "#/components/schemas/ScrobbleProvider"
@@ -25722,21 +26167,40 @@
         "enum": [
           0,
           1,
-          2
+          2,
+          3,
+          4
         ],
         "type": "integer",
-        "description": "Members:\n- `0` — Active\n- `1` — Cancelled\n- `2` — Paused",
+        "description": "Members:\n- `0` — Active\n- `1` — Cancelled\n- `2` — Paused\n- `3` — Cancelling\n- `4` — Expired",
         "format": "int32",
         "x-enum-varnames": [
           "Active",
           "Cancelled",
-          "Paused"
+          "Paused",
+          "Cancelling",
+          "Expired"
         ],
         "x-enum-descriptions": [
           "Active",
           "Cancelled",
-          "Paused"
+          "Paused",
+          "Cancelling",
+          "Expired"
         ]
+      },
+      "KavitaPlusUserInfo": {
+        "required": [
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
       },
       "KeyBind": {
         "required": [
@@ -25987,12 +26451,10 @@
             "$ref": "#/components/schemas/KavitaPlusSubscriptionState"
           },
           "isActive": {
-            "type": "boolean",
-            "readOnly": true
+            "type": "boolean"
           },
           "isCancelled": {
-            "type": "boolean",
-            "readOnly": true
+            "type": "boolean"
           },
           "expirationDate": {
             "type": "string",
@@ -26045,7 +26507,14 @@
             "type": "string",
             "nullable": true
           },
+          "pastDue": {
+            "type": "boolean"
+          },
           "discordId": {
+            "type": "string",
+            "nullable": true
+          },
+          "discordUsername": {
             "type": "string",
             "nullable": true
           },
@@ -26112,24 +26581,6 @@
           "existingId": {
             "type": "integer",
             "format": "int32"
-          }
-        },
-        "additionalProperties": false
-      },
-      "MalUserInfoDto": {
-        "required": [
-          "accessToken",
-          "username"
-        ],
-        "type": "object",
-        "properties": {
-          "username": {
-            "type": "string",
-            "nullable": true
-          },
-          "accessToken": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -26345,6 +26796,53 @@
           },
           "query": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MatchSeriesInfoDto": {
+        "type": "object",
+        "properties": {
+          "hasMatch": {
+            "type": "boolean"
+          },
+          "isLegacy": {
+            "type": "boolean"
+          },
+          "plusMediaFormat": {
+            "$ref": "#/components/schemas/PlusMediaFormat"
+          },
+          "libraryType": {
+            "$ref": "#/components/schemas/LibraryType"
+          },
+          "matchedProvider": {
+            "$ref": "#/components/schemas/MetadataProvider"
+          },
+          "primaryProvider": {
+            "$ref": "#/components/schemas/MetadataProvider"
+          },
+          "seriesFormat": {
+            "$ref": "#/components/schemas/MangaFormat"
+          },
+          "mangaBakaId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "aniListId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "hardcoverId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "cbrId": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           }
         },
@@ -26627,6 +27125,26 @@
           "Tag"
         ]
       },
+      "MetadataProvider": {
+        "enum": [
+          2,
+          3,
+          4
+        ],
+        "type": "integer",
+        "description": "Members:\n- `2` — Hardcover\n- `3` — Mangabaka\n- `4` — ComicBookRoundup",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Hardcover",
+          "Mangabaka",
+          "ComicBookRoundup"
+        ],
+        "x-enum-descriptions": [
+          "Hardcover",
+          "Mangabaka",
+          "ComicBookRoundup"
+        ]
+      },
       "MetadataSettingField": {
         "enum": [
           1,
@@ -26859,6 +27377,29 @@
           }
         },
         "additionalProperties": false
+      },
+      "OAuthUpstream": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — Discord\n- `1` — MangaBaka\n- `2` — AniList\n- `3` — MyAnimeList",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Discord",
+          "MangaBaka",
+          "AniList",
+          "MyAnimeList"
+        ],
+        "x-enum-descriptions": [
+          "Discord",
+          "MangaBaka",
+          "AniList",
+          "MyAnimeList"
+        ]
       },
       "OidcConfigDto": {
         "type": "object",
@@ -27700,6 +28241,29 @@
           },
           "providerUrl": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReadStatusTransitionRule": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "days": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "transitionStatus": {
+            "$ref": "#/components/schemas/ScrobbleReadStatus"
+          },
+          "excludedPublicationStatus": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicationStatus"
+            },
             "nullable": true
           }
         },
@@ -28876,6 +29440,24 @@
         },
         "additionalProperties": false
       },
+      "RenewKavitaPlusLicenseDto": {
+        "required": [
+          "billingInterval",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "billingInterval": {
+            "$ref": "#/components/schemas/KavitaPlusBillingInterval"
+          }
+        },
+        "additionalProperties": false
+      },
       "RereadChapterDto": {
         "type": "object",
         "properties": {
@@ -28955,6 +29537,26 @@
           }
         },
         "additionalProperties": false
+      },
+      "ReviewScrobbleTarget": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — Private\n- `1` — Friends\n- `2` — Public",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Private",
+          "Friends",
+          "Public"
+        ],
+        "x-enum-descriptions": [
+          "Private",
+          "Friends",
+          "Public"
+        ]
       },
       "RgbaColor": {
         "type": "object",
@@ -29113,8 +29715,14 @@
             "format": "float",
             "nullable": true
           },
+          "readStatus": {
+            "$ref": "#/components/schemas/ScrobbleReadStatus"
+          },
           "scrobbleEventType": {
             "$ref": "#/components/schemas/ScrobbleEventType"
+          },
+          "scrobbleProvider": {
+            "$ref": "#/components/schemas/ScrobbleProvider"
           },
           "isErrored": {
             "type": "boolean"
@@ -29183,24 +29791,27 @@
           1,
           2,
           3,
-          4
+          4,
+          5
         ],
         "type": "integer",
-        "description": "Members:\n- `0` — Chapter Read (ChapterRead)\n- `1` — Add to Want to Read (AddWantToRead)\n- `2` — Remove from Want to Read (RemoveWantToRead)\n- `3` — Score Updated (ScoreUpdated)\n- `4` — Review Added/Updated (Review)",
+        "description": "Members:\n- `0` — Chapter Read (ChapterRead)\n- `1` — Add to Want to Read (AddWantToRead)\n- `2` — Remove from Want to Read (RemoveWantToRead)\n- `3` — Score Updated (ScoreUpdated)\n- `4` — Review Added/Updated (Review)\n- `5` — Read status Updated (ReadStatusUpdate)",
         "format": "int32",
         "x-enum-varnames": [
           "ChapterRead",
           "AddWantToRead",
           "RemoveWantToRead",
           "ScoreUpdated",
-          "Review"
+          "Review",
+          "ReadStatusUpdate"
         ],
         "x-enum-descriptions": [
           "Chapter Read",
           "Add to Want to Read",
           "Remove from Want to Read",
           "Score Updated",
-          "Review Added/Updated"
+          "Review Added/Updated",
+          "Read status Updated"
         ]
       },
       "ScrobbleHoldDto": {
@@ -29256,6 +29867,115 @@
           "Cbr",
           "Hardcover",
           "MangaBaka"
+        ]
+      },
+      "ScrobbleProviderDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/ScrobbleProvider"
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "authenticationToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "refreshToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "validUntilUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastSyncedUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hasRunScrobbleEventGeneration": {
+            "type": "boolean"
+          },
+          "scrobbleEventGenerationRan": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/ScrobbleProviderSettingsDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ScrobbleProviderSettingsDto": {
+        "type": "object",
+        "properties": {
+          "progressScrobbling": {
+            "type": "boolean"
+          },
+          "wantToReadSync": {
+            "type": "boolean"
+          },
+          "ratingScrobbling": {
+            "type": "boolean"
+          },
+          "reviewsScrobbling": {
+            "type": "boolean"
+          },
+          "reviewScrobbleTarget": {
+            "$ref": "#/components/schemas/ReviewScrobbleTarget"
+          },
+          "allLibraries": {
+            "type": "boolean"
+          },
+          "libraries": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "nullable": true
+          },
+          "highestAgeRating": {
+            "$ref": "#/components/schemas/AgeRating"
+          },
+          "inactiveSeriesRule": {
+            "$ref": "#/components/schemas/ReadStatusTransitionRule"
+          },
+          "droppedSeriesRule": {
+            "$ref": "#/components/schemas/ReadStatusTransitionRule"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ScrobbleReadStatus": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "type": "integer",
+        "description": "Members:\n- `0` — Ignore\n- `1` — Want to Read (WantToRead)\n- `2` — Read\n- `3` — Un read (UnRead)\n- `4` — Dropped\n- `5` — On hold (OnHold)",
+        "format": "int32",
+        "x-enum-varnames": [
+          "Ignore",
+          "WantToRead",
+          "Read",
+          "UnRead",
+          "Dropped",
+          "OnHold"
+        ],
+        "x-enum-descriptions": [
+          "Ignore",
+          "Want to Read",
+          "Read",
+          "Un read",
+          "Dropped",
+          "On hold"
         ]
       },
       "SearchResultDto": {
@@ -31466,6 +32186,19 @@
         },
         "additionalProperties": false
       },
+      "TokenValidityInfoDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/ScrobbleProvider"
+          },
+          "validUntilUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "TopReadDto": {
         "type": "object",
         "properties": {
@@ -32461,6 +33194,30 @@
         },
         "additionalProperties": false
       },
+      "UpdateScrobbleProviderDto": {
+        "required": [
+          "provider"
+        ],
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/ScrobbleProvider"
+          },
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "authenticationToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "refreshToken": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdateSeriesDto": {
         "type": "object",
         "properties": {
@@ -33330,7 +34087,7 @@
         },
         "additionalProperties": false
       },
-      "UserTokenInfo": {
+      "UserTokenInfoDto": {
         "type": "object",
         "properties": {
           "userId": {
@@ -33341,18 +34098,12 @@
             "type": "string",
             "nullable": true
           },
-          "isAniListTokenSet": {
-            "type": "boolean"
-          },
-          "isAniListTokenValid": {
-            "type": "boolean"
-          },
-          "aniListValidUntilUtc": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "isMalTokenSet": {
-            "type": "boolean"
+          "tokens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenValidityInfoDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -33611,6 +34362,9 @@
     },
     {
       "name": "Metadata"
+    },
+    {
+      "name": "OAuth"
     },
     {
       "name": "Oidc"

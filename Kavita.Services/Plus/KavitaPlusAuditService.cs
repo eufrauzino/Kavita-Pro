@@ -7,7 +7,6 @@ using Kavita.API.Database;
 using Kavita.API.Services.Plus;
 using Kavita.Models.DTOs.KavitaPlus;
 using Kavita.Models.DTOs.KavitaPlus.Audit;
-using Kavita.Models.Entities.Enums;
 using Kavita.Models.Entities.Enums.Audit;
 using Kavita.Models.Entities.History;
 using Microsoft.Extensions.Logging;
@@ -85,6 +84,11 @@ public class KavitaPlusAuditService(IUnitOfWork unitOfWork, ILogger<KavitaPlusAu
         AuditStatus status, string? error = null, int? userId = null, CancellationToken ct = default) =>
         LogAsync(KavitaPlusAuditCategory.Scrobble, type, status,
             AuditSubjectType.Series, seriesId: seriesId, payload: details, error: error, userId: userId, ct: ct);
+
+    public Task LogChapterScrobbleAsync(KavitaPlusEventType type, int seriesId, int chapterId, AuditLogScrobbleParamsDto details,
+        AuditStatus status, string? error = null, int? userId = null, CancellationToken ct = default) =>
+        LogAsync(KavitaPlusAuditCategory.Scrobble, type, status,
+            AuditSubjectType.Chapter, seriesId: seriesId, subjectId: chapterId, payload: details, error: error, userId: userId, ct: ct);
 
     public async Task PurgeOldLogsAsync(CancellationToken ct = default)
     {

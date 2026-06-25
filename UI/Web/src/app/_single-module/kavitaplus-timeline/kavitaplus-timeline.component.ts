@@ -7,6 +7,7 @@ import {
   KavitaPlusAuditEventTypeIconComponent
 } from "../../shared/_components/kavitaplus-event-type-icon/kavita-plus-audit-event-type-icon.component";
 import {EmptyStateComponent} from "../../shared/_components/empty-state/empty-state.component";
+import {AuditSubjectType} from "../../_models/kavitaplus/audit-subject-type.enum";
 
 interface DayGroup {
   key: string;
@@ -71,6 +72,8 @@ export class KavitaplusTimelineComponent {
         return 'var(--audit-log-scrobble-color)';
       case KavitaPlusAuditCategory.Sync:
         return 'var(--audit-log-sync-color)';
+      case KavitaPlusAuditCategory.System:
+        return 'var(--audit-log-system-color)';
       default:
         return 'var(--audit-log-metadata-color)';
     }
